@@ -13,7 +13,7 @@
 
 ![image-20260113134118388](./docs/images/user_skill.png)
 
-![image-20260113112405730](./docs/images/claude_code_use_fist .png)
+![image-20260113112405730](./docs/images/claude_code_use_fist.png)
 
 
 
@@ -127,7 +127,7 @@ ps:
 你有哪些 agent skill？
 ```
 
-![image-20260113112405730](C:/work/tan/code/skills/docs/images/claude_code_use_fist .png)
+![image-20260113112405730](C:/work/tan/code/skills/docs/images/claude_code_use_fist.png)
 
 ## 2. 测试`会议总结助手` 
 
@@ -334,5 +334,5 @@ ps:
 # 备注
 
 1. 我最开始的 `claude code 2.0.19`  无法检测到 skill ，我升级到` 2.1.6` 就好了
-	![image-20260113111855350](./docs/images/claude_code_use_fist .png)
+	![image-20260113111855350](./docs/images/claude_code_use_fist.png)
 
