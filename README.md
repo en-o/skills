@@ -4,14 +4,50 @@
 我的 agent skill 集合
 
 
+
+# 如何使用
+
+将助手目录整个文件夹放到 [路径选择](#skills 存放在哪里) 就可以用了
+
+如将 ：`会议总结助手`移动到 `.claude\skills` 
+
+![image-20260113134118388](./docs/images/user_skill.png)
+
+![image-20260113112405730](C:/work/tan/code/skills/docs/images/claude_code_use_fist .png)
+
+
+
+
+
+
 # 什么是 skill
 agent skill 就是一个大模型可以随时翻阅的说明文档
+
+
+
+## 渐进式披露（Progressive Disclosure)
+
+![image-20260113132820926](./docs/images/sill_结构.png)g
+
+
+
+## Skill VS MCP
+
+> https://claude.com/blog/skills-explained
+
+**When to use a Skill instead:** <span style="color:red">MCP connects Claude to data; Skills teach Claude what to do with that data.</span>If you're explaining *how* to use a tool or follow procedures—like "when querying our database, always filter by date range first" or "format Excel reports with these specific formulas"—that's a Skill. If you need Claude to *access* the database or Excel files in the first place, that's MCP. Use both together: MCP for connectivity, Skills for procedural knowledge.
+
+![image-20260113133926155](./docs/images/mcpvsskill.png)
+
+
 
 # skill 结构
 
 > 官方建议将 Reference 归类至 references/ 文件夹，Script 归类至 scripts/ 文件夹，以保持结构清晰
 >
 > - 脚本文件只会被执行不会被读取，这样可以有效的减少token消耗 （cc只关心脚本执行方法和运行结果，不管脚本内容
+>   - 构建的时候最好写清楚调用方法和解释清楚用途，要不然如果执行错误可能还是会去看内容
+>   - <span style="color:red">适合轻量脚本，复杂的请交给 mcp</span>
 > - reference 是读取，会将内容加载到上下文中所以会消耗token
 
 ```text
@@ -93,6 +129,8 @@ ps:
 
 ## 2. 测试`会议总结助手` 
 
+> [参考视频：Agent Skill 从使用到原理，一次讲清](https://www.youtube.com/watch?v=yDc0_8emz7M)
+
 ### 基础测试
 
 输入内容：
@@ -161,6 +199,8 @@ ps:
 
 ### 添加`财务提醒规则`测试
 
+> reference是会将内容加载到上下文中，所以要注意长度，token的消耗
+
 输入内容：
 
 ```text
@@ -208,7 +248,9 @@ ps:
   - 财务提醒：住宿费1200元/晚超出一线城市标准(800元/晚)400元；餐饮人均500元达上海上限需业务副总裁(VP)特批并附完整参会名单。
 ```
 
-### 添加代码脚本测试
+### 添加`代码脚本` 测试
+
+> cc只会执行 脚本和关系结果，不会读取脚本内容所以不用担心token消耗
 
 输入内容
 
