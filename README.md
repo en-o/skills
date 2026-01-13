@@ -37,6 +37,8 @@ agent skill 就是一个大模型可以随时翻阅的说明文档
 
 **When to use a Skill instead:** <span style="color:red">MCP connects Claude to data; Skills teach Claude what to do with that data.</span>If you're explaining *how* to use a tool or follow procedures—like "when querying our database, always filter by date range first" or "format Excel reports with these specific formulas"—that's a Skill. If you need Claude to *access* the database or Excel files in the first place, that's MCP. Use both together: MCP for connectivity, Skills for procedural knowledge.
 
+`MCP` 把`Claude` 和`数据`连接起来；`Skill`则教`Claude`如何`利用`这些`数据`
+
 ![image-20260113133926155](./docs/images/mcpvsskill.png)
 
 
