@@ -127,7 +127,7 @@ ps:
 你有哪些 agent skill？
 ```
 
-![image-20260113112405730](C:/work/tan/code/skills/docs/images/claude_code_use_fist.png)
+![image-20260113112405730](./docs/images/claude_code_use_fist.png)
 
 ## 2. 测试`会议总结助手` 
 
@@ -155,7 +155,7 @@ ps:
 
 
 
-![image-20260113112405730](C:/work/tan/code/skills/docs/images/meeting_test_1.png)
+![image-20260113112405730](./docs/images/meeting_test_1.png)
 
 
 
