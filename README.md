@@ -1,5 +1,6 @@
 # 项目说明
-> [官方skill文档](https://code.claude.com/docs/zh-CN/skills) 
+> - [官方skill文档](https://code.claude.com/docs/zh-CN/skills)  
+> - [官方agent-skills文档](https://platform.claude.com/docs/zh-CN/agents-and-tools/agent-skills/) 
 
 我的 agent skill 集合
 
