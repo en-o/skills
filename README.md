@@ -13,7 +13,7 @@
 
 ![image-20260113134118388](./docs/images/user_skill.png)
 
-![image-20260113112405730](C:/work/tan/code/skills/docs/images/claude_code_use_fist .png)
+![image-20260113112405730](./docs/images/claude_code_use_fist .png)
 
 
 
