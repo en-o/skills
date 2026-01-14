@@ -1,6 +1,6 @@
 ---
 name: Java开发基础组件使用助手
-description: JDevelops 框架的代码生成助手，用于创建、改进、新增符合规范的 Spring Boot 3.x + JPA 代码。在以下场景自动激活：创建 Spring Boot 项目、新增业务模块、编写 JPA 实体类、开发 REST API、使用 PathRestController、ApiMapping、J2Service、JpaCommonBean 等框架特性、改进现有代码使其符合规范、扩展功能时需要遵循框架最佳实践。
+description: 用于 JDevelops 框架开发的代码生成助手，生成符合规范的 Spring Boot 3.x + JPA 代码。在使用 JDevelops 框架、开发 REST API、编写 Entity/Service/Controller、使用 PathRestController、J2Service、JpaCommonBean、需要遵循代码规范时使用。
 ---
 
 # Java开发基础组件使用助手
