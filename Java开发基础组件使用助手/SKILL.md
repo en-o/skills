@@ -15,6 +15,25 @@ description: 用于 JDevelops 框架开发的代码生成助手，生成符合�
 
 ## 🚀 快速开始
 
+### 🤖 交互式工作流
+
+本助手采用**交互式对话**方式，在关键决策点会主动询问您的需求和偏好：
+
+#### 创建新项目时会询问
+- 📝 项目名称和包路径（如未提供）
+- 📋 项目描述和业务场景
+- 📦 需要集成的组件（必要/推荐/可选）
+- 🔍 组件版本自动查询和建议
+
+#### 添加业务模块时会询问
+- 📋 项目整体描述（如首次添加模块）
+- 📁 包结构选择（三层架构 vs 垂直切分）
+- 🗃️ 数据表结构提供方式（已有表结构、字段清单、口头描述、自己编写）
+- 🎯 模块名称和业务领域
+- 🔒 敏感字段和脱敏需求
+
+**好处**: 交互式询问确保生成的代码完全符合您的项目需求，避免后续修改。
+
 ### 根据任务类型选择工作流
 
 **创建新项目？** → 查阅 [workflows/create-project.md](workflows/create-project.md)
@@ -23,6 +42,27 @@ description: 用于 JDevelops 框架开发的代码生成助手，生成符合�
 **扩展功能？** → 查阅 [workflows/extend-feature.md](workflows/extend-feature.md)
 
 ## 📚 在线参考资源
+
+### 组件清单和版本查询
+**组件清单**: [reference/components.md](reference/components.md)
+- 🔴 必要组件（jdevelops-spring-boot-starter、jdevelops-dals-jpa）
+- 🟡 推荐组件（jdevelops-apis-result、springdoc-openapi）
+- 🟢 可选组件（认证、文件上传、Excel、缓存等）
+
+**版本查询工具**: `scripts/query_versions.py`
+```bash
+# 查询所有组件最新版本
+python3 scripts/query_versions.py
+
+# 查询指定组件
+python3 scripts/query_versions.py -a jdevelops-spring-boot-starter
+```
+
+### 包结构选择
+**包结构指南**: [reference/package-structure.md](reference/package-structure.md)
+- 传统三层架构（适合中小型项目）
+- 垂直切分模块化（适合大型项目）
+- 混合模式和迁移指南
 
 ### 框架源码
 **GitHub 仓库**：https://github.com/en-o/Jdevelops

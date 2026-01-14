@@ -16,31 +16,82 @@
 
 ## 步骤1：确定项目信息
 
-明确以下信息：
-- **项目名称**（如：user-service）
-- **包名**（如：com.example.userservice）
-- **功能模块**（规划需要哪些业务模块）
+### ⚠️ 交互式询问
+
+**如果用户未提供以下信息，必须进行询问**：
+
+1. **项目名称**
+   - 询问：请提供项目名称（例如：user-service、order-management）
+   - 说明：用于创建项目目录和 Spring 应用名称
+   - 示例：user-service
+
+2. **包路径**
+   - 询问：请提供 Java 包路径（例如：com.example.userservice）
+   - 说明：遵循反向域名规范
+   - 示例：com.company.projectname
+
+3. **项目描述**
+   - 询问：请简要描述项目功能和业务场景
+   - 说明：帮助规划模块结构和选择合适的组件
+   - 示例：这是一个用户管理系统，需要实现用户注册、登录、权限控制等功能
+
+4. **选择组件**
+   - 询问：请选择需要集成的组件
+   - 说明：根据项目需求选择，参考 [../reference/components.md](../reference/components.md)
+   - 提示：
+     - 🔴 必要组件（已自动包含）：jdevelops-spring-boot-starter、jdevelops-dals-jpa
+     - 🟡 推荐组件：jdevelops-apis-result、springdoc-openapi
+     - 🟢 可选组件：根据场景选择（认证、文件上传、Excel、缓存等）
+
+### 项目信息确认
+
+确认以下信息：
+- **项目名称**：${用户提供或询问得到}
+- **包名**：${用户提供或询问得到}
+- **项目描述**：${用户提供或询问得到}
+- **选择的组件**：${根据项目需求确定}
 - **技术栈**：
   - JDK 17
   - Spring Boot 3.2.7
-  - JDevelops 框架
+  - JDevelops 框架（最新版本）
 
 ---
 
 ## 步骤2：配置项目依赖
 
-参考 GitHub 仓库中的示例项目配置：https://github.com/en-o/Jdevelops
+### 查询最新版本
+
+**⚠️ 使用前必须查询最新版本号**
+
+使用 Python 脚本查询 JDevelops 组件的最新版本：
+
+```bash
+cd scripts
+python3 query_versions.py
+```
+
+查询特定组件：
+```bash
+python3 query_versions.py -a jdevelops-spring-boot-starter -f maven
+```
+
+**在线查询**: https://central.sonatype.com/search?q=cn.tannn.jdevelops
 
 ### 核心依赖（pom.xml）
+
+参考 GitHub 仓库中的示例项目配置：https://github.com/en-o/Jdevelops
 
 ```xml
 <properties>
     <java.version>17</java.version>
     <spring-boot.version>3.2.7</spring-boot.version>
-    <jdevelops.version>最新版本</jdevelops.version>
+    <!-- ⚠️ 替换为实际查询到的最新版本 -->
+    <jdevelops.version>${实际最新版本}</jdevelops.version>
 </properties>
 
 <dependencies>
+    <!-- 🔴 必要组件 -->
+
     <!-- JDevelops 核心 Starter -->
     <dependency>
         <groupId>cn.tannn.jdevelops</groupId>
@@ -55,29 +106,55 @@
         <version>${jdevelops.version}</version>
     </dependency>
 
+    <!-- Spring Data JPA -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
     <!-- MySQL 驱动 -->
     <dependency>
         <groupId>com.mysql</groupId>
         <artifactId>mysql-connector-j</artifactId>
     </dependency>
 
-    <!-- 可选：Redis + JWT 鉴权 -->
+    <!-- 🟡 推荐组件 -->
+
+    <!-- 统一返回结果 -->
+    <dependency>
+        <groupId>cn.tannn.jdevelops</groupId>
+        <artifactId>jdevelops-apis-result</artifactId>
+        <version>${jdevelops.version}</version>
+    </dependency>
+
+    <!-- Swagger 文档 -->
+    <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>2.3.0</version>
+    </dependency>
+
+    <!-- 🟢 可选组件（根据步骤1选择的组件添加） -->
+
+    <!-- Redis + JWT 鉴权 -->
     <dependency>
         <groupId>cn.tannn.jdevelops</groupId>
         <artifactId>jdevelops-authentications-rjwt</artifactId>
         <version>${jdevelops.version}</version>
     </dependency>
 
-    <!-- 可选：自动建库 -->
+    <!-- 自动建库 -->
     <dependency>
         <groupId>cn.tannn.jdevelops</groupId>
         <artifactId>jdevelops-dals-autoschema</artifactId>
         <version>${jdevelops.version}</version>
     </dependency>
+
+    <!-- 更多可选组件请参考 ../reference/components.md -->
 </dependencies>
 ```
 
-**查看最新版本**：https://github.com/en-o/Jdevelops/releases
+**组件选择参考**: [../reference/components.md](../reference/components.md)
 
 ---
 
