@@ -2,7 +2,12 @@
 
 ## 快速参考
 
-Service 接口继承 `J2Service<Entity>`，Service 实现继承 `J2ServiceImpl<Entity>`。
+Service 接口继承 `J2Service<Entity>`，Service 实现继承 `J2ServiceImpl<DAO, Entity, ID>`。
+
+**关键注意**：`J2ServiceImpl` 需要三个泛型参数：
+1. **DAO**: DAO 接口类型
+2. **Entity**: 实体类类型
+3. **ID**: 主键类型（通常是 Long 或 String）
 
 ---
 
@@ -22,11 +27,12 @@ public interface CustomerService extends J2Service<Customer> {
 
 ```java
 @Service
-@RequiredArgsConstructor
-public class CustomerServiceImpl extends J2ServiceImpl<Customer>
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
     implements CustomerService {
 
-    private final CustomerDao customerDao;
+    public CustomerServiceImpl() {
+        super(Customer.class);
+    }
 
     @Override
     public Optional<Customer> findByLoginName(String loginName) {
@@ -39,6 +45,12 @@ public class CustomerServiceImpl extends J2ServiceImpl<Customer>
     }
 }
 ```
+
+**核心要点**：
+- 继承 `J2ServiceImpl<CustomerDao, Customer, Long>`（三个泛型参数）
+- 构造函数调用 `super(Customer.class)`
+- 使用 `@Service` 注解
+- DAO 会通过框架自动注入，无需手动注入
 
 ---
 
@@ -142,7 +154,7 @@ public Page<Customer> searchCustomers(String keyword, Pageable pageable) {
 
 ```java
 @Override
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public void registerCustomer(UserAdd add) {
     // 1. 检查用户名是否存在
     if (findByLoginName(add.getLoginName()).isPresent()) {
@@ -161,6 +173,10 @@ public void registerCustomer(UserAdd add) {
 
     // 5. 其他业务逻辑（如发送邮件）
     sendWelcomeEmail(customer);
+}
+
+private void sendWelcomeEmail(Customer customer) {
+    // 邮件发送逻辑
 }
 ```
 
@@ -190,13 +206,14 @@ public void complexOperation() {
 ## 完整检查清单
 
 - [ ] Service 接口继承 `J2Service<Entity>`
-- [ ] Service 实现继承 `J2ServiceImpl<Entity>`
+- [ ] Service 实现继承 `J2ServiceImpl<DAO, Entity, ID>`（三个泛型参数）
+- [ ] Service 实现的构造函数调用 `super(Entity.class)`
 - [ ] Service 实现使用 `@Service` 注解
-- [ ] 使用构造器注入 DAO
+- [ ] 不需要手动注入 DAO（框架自动注入）
 - [ ] 方法命名遵循规范（findByXxx、saveXxx、updateXxx）
 - [ ] 优先使用框架提供的基础方法
 - [ ] 复杂查询通过 DAO 实现
-- [ ] 需要事务的方法添加 `@Transactional`
+- [ ] 需要事务的方法添加 `@Transactional(rollbackFor = Exception.class)`
 
 ---
 
