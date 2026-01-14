@@ -2,12 +2,16 @@
 
 本示例展示如何创建一个完整的用户管理模块，包含 Entity、DAO、Service、Controller 的所有代码。
 
+**示例包路径**: `cn.tannn.example` （实际项目中替换为你的包路径）
+
 ---
 
-## 目录结构
+## 方式 A：传统三层架构
+
+适用于小型项目（< 50 个实体）
 
 ```
-src/main/java/com/example/userservice/
+src/main/java/cn/tannn/example/
 ├── controller/
 │   └── user/
 │       ├── dto/
@@ -16,18 +20,90 @@ src/main/java/com/example/userservice/
 │       │   └── UserPage.java
 │       ├── vo/
 │       │   └── UserInfo.java
-│       └── CustomerController.java
+│       └── UserController.java
 │
-└── customer/
-    ├── entity/
-    │   └── Customer.java
-    ├── dao/
-    │   └── CustomerDao.java
-    ├── service/
-    │   └── CustomerService.java
-    └── service/impl/
-        └── CustomerServiceImpl.java
+├── entity/
+│   └── User.java
+│
+├── dao/
+│   └── UserDao.java
+│
+├── service/
+│   └── UserService.java
+│
+└── service/impl/
+    └── UserServiceImpl.java
 ```
+
+---
+
+## 方式 B：垂直切分（模块化）
+
+适用于中型项目（50-100 个实体）
+
+```
+src/main/java/cn/tannn/example/
+├── controller/
+│   └── user/
+│       ├── dto/
+│       │   ├── UserAdd.java
+│       │   ├── UserEdit.java
+│       │   └── UserPage.java
+│       ├── vo/
+│       │   └── UserInfo.java
+│       └── UserController.java
+│
+└── user/                      # 用户模块
+    ├── entity/
+    │   └── User.java
+    ├── dao/
+    │   └── UserDao.java
+    ├── service/
+    │   └── UserService.java
+    └── service/impl/
+        └── UserServiceImpl.java
+```
+
+---
+
+## 方式 C：标准目录结构
+
+适用于大型项目（> 100 个实体）
+
+```
+src/main/java/cn/tannn/example/
+├── controller/
+│   └── user/
+│       ├── dto/
+│       │   ├── UserAdd.java
+│       │   ├── UserEdit.java
+│       │   └── UserPage.java
+│       ├── vo/
+│       │   └── UserInfo.java
+│       └── UserController.java
+│
+├── common/                    # 公共组件层
+│   ├── pojo/
+│   └── util/
+│
+├── core/                      # 核心配置层
+│   ├── config/
+│   └── exception/
+│
+└── modules/                   # 业务模块层
+    └── account/              # 账户大模块
+        └── user/             # 用户子模块
+            ├── entity/
+            │   └── User.java
+            ├── dao/
+            │   └── UserDao.java
+            ├── service/
+            │   └── UserService.java
+            └── service/impl/
+                └── UserServiceImpl.java
+```
+
+**以下示例代码适用于所有三种结构**（根据实际包路径调整 import）
 
 ---
 
