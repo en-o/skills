@@ -38,7 +38,8 @@
 如果是首次添加业务模块，需要询问包结构偏好：
 - **询问**: 请选择您希望使用的包结构
 - **选项**:
-  - **选项 A - 传统三层架构（推荐）**:
+
+  - **选项 A - 传统三层架构（推荐小型项目）**:
     ```
     src/main/java/{basePackage}/
     ├── controller/{domain}/     # 控制器层（按业务域划分）
@@ -49,25 +50,49 @@
     ├── service/                # Service 接口层
     └── service/impl/           # Service 实现层
     ```
-    优点：结构清晰、易于定位、适合中小型项目
+    - **优点**: 结构清晰、易于定位、适合中小型项目
+    - **适用**: < 50 个实体的项目
 
-  - **选项 B - 垂直切分（模块化）**:
+  - **选项 B - 垂直切分（推荐中型项目）**:
     ```
     src/main/java/{basePackage}/
     ├── controller/{domain}/     # 控制器层（按业务域划分）
     │   ├── dto/
     │   └── vo/
     └── {module}/               # 业务模块（按功能垂直拆分）
-        ├── entity/            # 模块实体
-        ├── dao/               # 模块 DAO
-        ├── service/           # 模块 Service 接口
-        └── service/impl/      # 模块 Service 实现
+        ├── entity/            # 模块内所有实体
+        ├── dao/               # 模块内所有 DAO
+        ├── service/           # 模块内所有 Service 接口
+        └── service/impl/      # 模块内所有 Service 实现
     ```
-    优点：模块独立、易于拆分微服务、适合大型项目
+    - **优点**: 模块独立、易于拆分微服务、适合大型项目
+    - **适用**: 50-100 个实体，模块独立性强
+
+  - **选项 C - 标准目录结构（推荐大型项目）**:
+    ```
+    src/main/java/{basePackage}/
+    ├── controller/{domain}/     # 控制器层（统一管理）
+    │   ├── dto/
+    │   └── vo/
+    ├── common/                 # 公共组件层
+    ├── core/                   # 核心配置层
+    └── modules/                # 业务模块层
+        └── {module}/          # 大模块
+            └── {submodule}/   # 子模块
+                ├── entity/
+                ├── dao/
+                ├── service/
+                └── service/impl/
+    ```
+    - **优点**: 高度模块化、支持大型项目、便于团队分工
+    - **适用**: > 100 个实体，多团队协作，复杂业务场景
 
 - **说明**:
   - 如果项目已有代码，则沿用现有结构
-  - 新项目推荐使用传统三层架构（选项 A）
+  - 新项目推荐根据项目规模选择：
+    - 小型项目（< 50 实体）→ 传统三层架构（选项 A）
+    - 中型项目（50-100 实体）→ 垂直切分（选项 B）
+    - 大型项目（> 100 实体）→ 标准目录结构（选项 C）
   - 详细说明请参考 [../reference/package-structure.md](../reference/package-structure.md)
 
 #### 3. 数据库结构提供方式
@@ -88,14 +113,31 @@
 #### 4. 模块基本信息
 
 明确以下信息：
-- **模块名称**（如：customer、order、product）
-  - 用于：
-    - 垂直切分结构：作为包名（{basePackage}.customer）
-    - 三层架构：作为类名前缀（CustomerDao、CustomerService）
-- **业务领域**（如：user、product、order）
-  - 用于：决定 Controller 所在包（controller.user、controller.product）
-- **核心字段**（哪些字段必需、哪些敏感、哪些需要脱敏）
-- **是否需要脱敏**（决定是否创建单独的响应类）
+
+**模块命名**：
+- **选项 A（传统三层架构）**：
+  - 作为类名前缀（如 Customer → CustomerDao、CustomerService）
+
+- **选项 B（垂直切分）**：
+  - 作为模块包名（如 `{basePackage}.customer`）
+  - 模块内所有类都在该包下（customer.entity、customer.dao、customer.service）
+
+- **选项 C（标准目录结构）**：
+  - **大模块名**：业务领域（如 account、biz、file、logs）
+  - **子模块名**：具体功能（如 account.suser、account.role、account.org）
+  - 路径格式：`{basePackage}.modules.{module}.{submodule}`
+
+**业务领域**（Controller 路径）：
+- 用于：决定 Controller 所在包（controller.user、controller.sys、controller.logs）
+- 无论采用哪种包结构，Controller 都统一按业务域划分
+
+**核心字段**：
+- 哪些字段必需
+- 哪些字段敏感（密码、token 等）
+- 哪些字段需要脱敏
+
+**是否需要脱敏**：
+- 决定是否创建单独的响应类（VO）
 
 ### 决策树：是否需要创建响应类？
 
@@ -113,9 +155,12 @@
 
 在开始生成代码前，确认以下信息：
 - [ ] 项目描述和业务场景已明确
-- [ ] 包结构选择已确定
+- [ ] 包结构选择已确定（A/B/C）
 - [ ] 数据表结构提供方式已确定
-- [ ] 模块名称和业务领域已明确
+- [ ] 模块命名已明确
+  - 选项 A/B：模块名（如 customer、order）
+  - 选项 C：大模块名和子模块名（如 account.suser）
+- [ ] 业务领域已明确（Controller 路径）
 - [ ] 核心字段需求已明确
 
 ---

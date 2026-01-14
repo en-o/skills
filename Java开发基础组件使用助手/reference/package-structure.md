@@ -70,7 +70,7 @@ src/main/java/com/example/project/
 
 ### 方式 B：垂直切分（模块化）
 
-按业务模块划分，每个模块内包含完整的技术层次。
+按业务模块划分，**每个模块内部采用传统三层架构**。
 
 ```
 src/main/java/com/example/project/
@@ -85,21 +85,21 @@ src/main/java/com/example/project/
 │       ├── dto/
 │       └── OrderController.java
 │
-├── user/                    # 用户模块（垂直拆分）
-│   ├── entity/
+├── user/                    # 用户模块（模块内传统架构）
+│   ├── entity/              # 用户模块的所有实体
 │   │   ├── User.java
 │   │   └── Role.java
-│   ├── dao/
+│   ├── dao/                 # 用户模块的所有 DAO
 │   │   ├── UserDao.java
 │   │   └── RoleDao.java
-│   ├── service/
+│   ├── service/             # 用户模块的所有 Service 接口
 │   │   ├── UserService.java
 │   │   └── RoleService.java
-│   └── service/impl/
+│   └── service/impl/        # 用户模块的所有 Service 实现
 │       ├── UserServiceImpl.java
 │       └── RoleServiceImpl.java
 │
-├── order/                   # 订单模块（垂直拆分）
+├── order/                   # 订单模块（模块内传统架构）
 │   ├── entity/
 │   │   ├── Order.java
 │   │   └── OrderItem.java
@@ -111,12 +111,17 @@ src/main/java/com/example/project/
 │   └── service/impl/
 │       └── OrderServiceImpl.java
 │
-└── product/                 # 商品模块（垂直拆分）
-    ├── entity/
-    ├── dao/
-    ├── service/
-    └── service/impl/
+└── product/                 # 商品模块（模块内传统架构）
+    ├── entity/              # 商品模块的所有实体
+    ├── dao/                 # 商品模块的所有 DAO
+    ├── service/             # 商品模块的所有 Service
+    └── service/impl/        # 商品模块的所有 Service 实现
 ```
+
+**核心特点**：
+- 以**模块为目录**进行垂直切分
+- 每个模块内部使用**传统三层架构**（entity、dao、service、service/impl 集中管理）
+- Controller 层统一管理，按业务域划分
 
 #### 优点
 - ✅ **模块独立**: 每个模块包含完整的业务逻辑
@@ -151,82 +156,159 @@ src/main/java/com/example/project/
   │   ├─ 模块耦合度高？ → 传统三层架构（A）
   │   └─ 模块独立性强？ → 垂直切分（B）
   │
-  └─ 大型项目（> 50 实体）
-      ├─ 未来会拆分微服务？ → 垂直切分（B）
-      └─ 单体应用？ → 根据团队偏好选择
+  ├─ 大型项目（50-100 实体）
+  │   ├─ 未来会拆分微服务？ → 垂直切分（B）
+  │   └─ 单体应用？ → 根据团队偏好选择 A 或 B
+  │
+  └─ 超大型项目（> 100 实体）
+      ├─ 多团队协作？ → 标准目录结构（C，强烈推荐）
+      ├─ 需要细粒度模块划分？ → 标准目录结构（C）
+      └─ 单团队开发？ → 垂直切分（B）
 ```
 
 ### 具体建议
 
 | 项目类型 | 推荐方式 | 原因 |
 |---------|---------|------|
-| 管理后台（用户、角色、权限、菜单） | A - 传统三层架构 | 模块数量少，耦合度高，结构简单高效 |
-| 电商平台（用户、商品、订单、支付） | B - 垂直切分 | 模块独立，业务复杂，便于后续拆分 |
+| 小型管理后台（用户、角色、权限、菜单） | A - 传统三层架构 | 模块数量少，耦合度高，结构简单高效 |
+| 中型电商平台（用户、商品、订单、支付） | B - 垂直切分 | 模块独立，业务复杂，便于后续拆分 |
 | 内容管理系统（文章、分类、标签、评论） | A - 传统三层架构 | 模块关联紧密，共享逻辑多 |
-| SaaS 多租户系统 | B - 垂直切分 | 租户隔离，模块独立，易于扩展 |
-| 微服务单个服务 | B - 垂直切分 | 为未来拆分做准备 |
+| 大型企业应用（账户、业务、文件、日志等） | C - 标准目录结构 | 业务复杂，模块众多，需要细粒度划分 |
+| SaaS 多租户系统 | C - 标准目录结构 | 租户隔离，模块独立，易于扩展 |
+| 效能评估平台（多业务模块） | C - 标准目录结构 | 大模块下包含多个子模块，层次清晰 |
+| 微服务单个服务 | B - 垂直切分 | 为未来拆分做准备，不需要过度设计 |
 
 ---
 
-## 混合模式
+## 方式 C：标准目录结构（推荐用于大型项目）
 
-在实际项目中，可以采用混合模式：
-
-### 模式 1：核心模块垂直切分 + 公共模块水平切分
+这是实际项目中广泛使用的标准结构，结合了垂直切分和水平切分的优点。
 
 ```
-src/main/java/com/example/project/
-├── controller/              # 控制器层（统一）
-│   ├── user/
-│   └── order/
+src/main/java/com/sunway/sxzz/
+├── controller/              # 控制器层（统一管理，按业务域划分）
+│   ├── user/               # 用户领域控制器
+│   │   ├── dto/
+│   │   │   ├── UserAdd.java
+│   │   │   └── UserEdit.java
+│   │   ├── vo/
+│   │   │   └── UserInfo.java
+│   │   └── UserController.java
+│   │
+│   ├── sys/                # 系统管理控制器
+│   ├── logs/               # 日志管理控制器
+│   └── front/              # 前台业务控制器
 │
-├── common/                  # 公共模块（水平切分）
-│   ├── entity/             # 公共实体（如字典、配置）
-│   │   ├── Dictionary.java
-│   │   └── SystemConfig.java
-│   ├── dao/
-│   └── service/
+├── common/                  # 公共组件层
+│   ├── annotations/        # 自定义注解
+│   ├── constant/           # 公共常量
+│   ├── pojo/              # 公共 POJO（如 JpaCommonBean）
+│   ├── util/              # 工具类
+│   └── views/             # JsonView 视图定义
 │
-├── user/                    # 用户模块（垂直切分）
-│   ├── entity/
-│   ├── dao/
-│   └── service/
+├── core/                    # 核心配置层
+│   ├── config/            # 配置类（Swagger、Redis、MongoDB等）
+│   ├── exception/         # 全局异常处理
+│   ├── initialize/        # 初始化类
+│   └── redis/             # Redis 配置
 │
-└── order/                   # 订单模块（垂直切分）
-    ├── entity/
-    ├── dao/
-    └── service/
+└── modules/                 # 业务模块层（细粒度垂直切分）
+    ├── account/            # 账户大模块
+    │   ├── constant/       # 模块常量
+    │   ├── org/           # 组织子模块
+    │   │   ├── entity/
+    │   │   │   └── Organization.java
+    │   │   ├── dao/
+    │   │   │   └── OrganizationDao.java
+    │   │   ├── service/
+    │   │   │   └── OrganizationService.java
+    │   │   └── service/impl/
+    │   │       └── OrganizationServiceImpl.java
+    │   │
+    │   ├── role/          # 角色子模块
+    │   │   ├── entity/
+    │   │   ├── dao/
+    │   │   ├── service/
+    │   │   └── service/impl/
+    │   │
+    │   ├── security/      # 安全子模块
+    │   │   ├── entity/
+    │   │   ├── dao/
+    │   │   ├── service/
+    │   │   └── service/impl/
+    │   │
+    │   └── suser/         # 用户子模块
+    │       ├── entity/
+    │       ├── dao/
+    │       ├── service/
+    │       └── service/impl/
+    │
+    ├── biz/                # 业务大模块
+    │   ├── {submodule}/   # 业务子模块
+    │   │   ├── entity/
+    │   │   ├── dao/
+    │   │   ├── service/
+    │   │   └── service/impl/
+    │
+    ├── dataharvest/        # 数据采集模块
+    │   ├── {submodule}/
+    │
+    ├── file/               # 文件管理模块
+    │   ├── entity/
+    │   ├── dao/
+    │   ├── service/
+    │   └── service/impl/
+    │
+    └── logs/               # 日志模块
+        ├── entity/
+        ├── dao/
+        ├── service/
+        └── service/impl/
 ```
 
-**适用场景**: 有少量公共实体（字典、配置），但核心业务模块独立性强
+### 核心特点
 
-### 模式 2：小模块三层 + 大模块垂直
+1. **Controller 统一管理**：
+   - 所有 Controller 放在 `controller/{domain}/` 下
+   - 按业务域划分（user、sys、logs、front 等）
+   - 包含对应的 dto 和 vo
 
-```
-src/main/java/com/example/project/
-├── controller/
-│
-├── entity/                  # 小模块实体（三层架构）
-│   ├── Dictionary.java
-│   └── SystemLog.java
-│
-├── dao/                     # 小模块 DAO
-│   ├── DictionaryDao.java
-│   └── SystemLogDao.java
-│
-├── service/                 # 小模块 Service
-│
-└── order/                   # 大模块（垂直切分）
-    ├── entity/
-    │   ├── Order.java
-    │   ├── OrderItem.java
-    │   ├── OrderLog.java
-    │   └── OrderRefund.java
-    ├── dao/
-    └── service/
-```
+2. **公共组件层（common）**：
+   - 存放通用的注解、常量、POJO、工具类
+   - 被所有模块共享使用
 
-**适用场景**: 部分模块简单（如字典），部分模块复杂（如订单）
+3. **核心配置层（core）**：
+   - 框架配置（Swagger、Redis、MongoDB 等）
+   - 全局异常处理
+   - 应用初始化逻辑
+
+4. **细粒度模块化（modules）**：
+   - **大模块**：如 account、biz、dataharvest
+   - **子模块**：在大模块下进一步细分（如 account 下的 org、role、security、suser）
+   - **每个子模块内部采用传统架构**：entity、dao、service、service/impl
+
+### 优点
+
+- ✅ **高度模块化**：业务边界清晰，易于团队分工
+- ✅ **可扩展性强**：新增子模块不影响现有结构
+- ✅ **易于维护**：相关代码集中在子模块内
+- ✅ **支持大型项目**：适合复杂业务场景
+- ✅ **便于拆分**：子模块可独立拆分为微服务
+- ✅ **公共组件复用**：common 和 core 层统一管理
+
+### 缺点
+
+- ⚠️ 目录层次较深（3-4 层）
+- ⚠️ 需要良好的模块规划
+- ⚠️ 小型项目可能过度设计
+
+### 适用场景
+
+- 大型企业项目（> 100 个实体）
+- 多团队协作开发
+- 业务模块复杂且独立性强
+- 需要良好的模块边界
+- 未来可能演进为微服务架构
 
 ---
 

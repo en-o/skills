@@ -2,94 +2,146 @@
 
 ## 核心原则
 
-JDevelops 框架采用**垂直领域驱动**的分层架构，每个业务模块自包含 Entity、DAO、Service、ServiceImpl，控制器层独立按业务域划分。
+JDevelops 框架支持**灵活的分层架构**，根据项目规模选择合适的目录结构：
+- **小型项目**：传统三层架构（entity、dao、service 集中管理）
+- **中型项目**：垂直切分（按模块划分，模块内三层架构）
+- **大型项目**：标准目录结构（controller + common + core + modules）
 
 ---
 
-## 标准目录结构
+## 标准目录结构（推荐用于大型项目）
+
+这是实际大型项目中广泛采用的标准结构，适合复杂业务场景。
 
 ```
 src/main/java/{package}/
-├── common/                    # 公共组件层
-│   ├── exception/            # 自定义异常（IException、IExceptionEnum）
-│   └── pojo/                 # 公共POJO（JpaCommonBean、TableIdVO等）
-│
-├── controller/               # 控制器层（按业务域垂直划分）
-│   ├── front/               # 前台业务控制器
-│   │   ├── dto/            # 请求类（UserAdd、UserEdit等）
-│   │   └── vo/             # 响应类（UserInfo等，仅在需要时创建）
-│   ├── user/                # 用户管理控制器
+├── controller/               # 控制器层（统一管理，按业务域划分）
+│   ├── user/                # 用户领域控制器
+│   │   ├── dto/            # 请求类（UserAdd、UserEdit、UserPage等）
+│   │   ├── vo/             # 响应类（UserInfo等，仅在需要时创建）
+│   │   └── UserController.java
 │   ├── sys/                 # 系统管理控制器
-│   └── logs/                # 日志管理控制器
+│   ├── logs/                # 日志管理控制器
+│   └── front/               # 前台业务控制器
 │
-├── {业务模块}/              # 业务领域模块（垂直拆分）
-│   ├── constant/            # 业务常量/枚举
-│   ├── entity/              # 实体类（JPA实体）
-│   ├── dao/                 # 数据访问层接口
-│   ├── service/             # 服务接口
-│   ├── service/impl/        # 服务实现
-│   └── domain/              # 领域对象（可选）
+├── common/                   # 公共组件层
+│   ├── annotations/         # 自定义注解
+│   ├── constant/            # 公共常量/枚举
+│   ├── pojo/                # 公共POJO（JpaCommonBean、ResultVO等）
+│   ├── util/                # 工具类
+│   ├── query/               # 公共查询对象
+│   ├── sensitive/           # 敏感信息处理
+│   └── views/               # JsonView 视图定义
 │
-├── customer/                # 示例:用户业务模块
-├── sys/                     # 示例:系统配置模块
-├── logs/                    # 示例:日志模块
+├── core/                     # 核心配置层
+│   ├── config/              # 配置类（Swagger、Redis、MongoDB等）
+│   ├── exception/           # 全局异常处理
+│   ├── initialize/          # 初始化类
+│   └── redis/               # Redis 配置
 │
-├── initialize/              # 初始化配置
-└── util/                    # 工具类
+└── modules/                  # 业务模块层（细粒度垂直切分）
+    ├── account/             # 账户大模块
+    │   ├── constant/        # 模块级常量
+    │   ├── org/            # 组织子模块
+    │   │   ├── entity/
+    │   │   ├── dao/
+    │   │   ├── service/
+    │   │   └── service/impl/
+    │   ├── role/           # 角色子模块
+    │   │   ├── entity/
+    │   │   ├── dao/
+    │   │   ├── service/
+    │   │   └── service/impl/
+    │   ├── security/       # 安全子模块
+    │   │   ├── entity/
+    │   │   ├── dao/
+    │   │   ├── service/
+    │   │   └── service/impl/
+    │   └── suser/          # 用户子模块
+    │       ├── entity/
+    │       ├── dao/
+    │       ├── service/
+    │       └── service/impl/
+    │
+    ├── biz/                 # 业务大模块
+    │   └── {submodule}/    # 业务子模块
+    │
+    ├── file/                # 文件管理模块
+    │   ├── entity/
+    │   ├── dao/
+    │   ├── service/
+    │   └── service/impl/
+    │
+    └── logs/                # 日志模块
+        ├── entity/
+        ├── dao/
+        ├── service/
+        └── service/impl/
 ```
+
+**结构特点**：
+- **Controller 统一管理**：所有控制器按业务域划分在 controller 下
+- **Common 公共层**：存放通用组件，被所有模块共享
+- **Core 核心层**：框架配置和全局处理
+- **Modules 模块层**：细粒度垂直切分，大模块下包含多个子模块，每个子模块内部采用传统架构
+
+**更多包结构选择**，请参考：[../reference/package-structure.md](../reference/package-structure.md)
 
 ---
 
 ## 架构核心特点
 
-### 1. 垂直领域驱动
+### 1. 分层清晰
 
-每个业务模块（customer、sys、logs等）**自包含**完整的分层结构：
+#### Controller 层（统一管理）
+- 所有控制器集中在 `controller/{domain}/` 下
+- 按业务域划分（user、sys、logs、front 等）
+- 包含对应的 dto 和 vo
+
+#### Common 层（公共组件）
+- 通用注解、常量、POJO、工具类
+- 被所有模块共享使用
+
+#### Core 层（核心配置）
+- 框架配置（Swagger、Redis、MongoDB 等）
+- 全局异常处理
+- 应用初始化逻辑
+
+#### Modules 层（业务模块）
+- 按大模块划分（account、biz、file、logs 等）
+- 大模块下可包含多个子模块（如 account 下的 org、role、security、suser）
+- 每个子模块内部采用传统架构（entity、dao、service、service/impl）
+
+### 2. 模块化设计
+
+每个子模块包含完整的业务逻辑：
 
 ```
-customer/
-├── entity/          # 实体类
-├── dao/             # 数据访问接口
-├── service/         # 服务接口
-└── service/impl/    # 服务实现
+account/org/          # 组织子模块
+├── entity/          # 组织相关实体
+├── dao/             # 组织数据访问
+├── service/         # 组织服务接口
+└── service/impl/    # 组织服务实现
 ```
 
 **优点**：
 - 模块边界清晰
 - 易于维护和扩展
 - 减少模块间耦合
-
-### 2. 控制器独立
-
-Controller 层按业务域划分，包含对应的请求/响应类：
-
-```
-controller/user/
-├── dto/                    # 请求类
-│   ├── UserAdd.java       # 新增请求
-│   ├── UserEdit.java      # 编辑请求
-│   └── UserPage.java      # 分页查询请求
-├── vo/                     # 响应类（仅在需要时创建）
-│   └── UserInfo.java      # 脱敏后的用户信息
-└── CustomerController.java
-```
-
-**注意**：
-- 目录名保留 `dto/` 和 `vo/`（历史兼容）
-- 类名**严格遵循意图命名规范**，不带 VO/DTO 后缀
+- 便于团队分工
 
 ### 3. 跨模块调用
 
 ```
-controller.user.CustomerController
+controller.user.UserController
     ↓ 注入
-customer.service.CustomerService
+modules.account.suser.service.UserService
     ↓ 实现
-customer.service.impl.CustomerServiceImpl
+modules.account.suser.service.impl.UserServiceImpl
     ↓ 注入
-customer.dao.CustomerDao
+modules.account.suser.dao.UserDao
     ↓ 操作
-customer.entity.Customer
+modules.account.suser.entity.User
 ```
 
 ---
@@ -152,20 +204,40 @@ customer.entity.Customer
 
 ## 包路径规范
 
-### MUST 遵守的规则
+### 标准目录结构包路径
 
 | 层次 | 包路径规范 | 示例 |
 |------|-----------|------|
-| Controller | `{package}.controller.{domain}` | `com.example.controller.user` |
-| Entity | `{package}.{module}.entity` | `com.example.customer.entity` |
-| DAO | `{package}.{module}.dao` | `com.example.customer.dao` |
-| Service | `{package}.{module}.service` | `com.example.customer.service` |
-| ServiceImpl | `{package}.{module}.service.impl` | `com.example.customer.service.impl` |
+| Controller | `{package}.controller.{domain}` | `com.sunway.sxzz.controller.user` |
+| DTO/VO | `{package}.controller.{domain}.dto/vo` | `com.sunway.sxzz.controller.user.dto` |
+| 大模块 | `{package}.modules.{module}` | `com.sunway.sxzz.modules.account` |
+| 子模块 Entity | `{package}.modules.{module}.{submodule}.entity` | `com.sunway.sxzz.modules.account.suser.entity` |
+| 子模块 DAO | `{package}.modules.{module}.{submodule}.dao` | `com.sunway.sxzz.modules.account.suser.dao` |
+| 子模块 Service | `{package}.modules.{module}.{submodule}.service` | `com.sunway.sxzz.modules.account.suser.service` |
+| 子模块 ServiceImpl | `{package}.modules.{module}.{submodule}.service.impl` | `com.sunway.sxzz.modules.account.suser.service.impl` |
+| 公共组件 | `{package}.common.{component}` | `com.sunway.sxzz.common.pojo` |
+| 核心配置 | `{package}.core.{component}` | `com.sunway.sxzz.core.config` |
 
-### 完整示例
+### 其他包结构路径
+
+**传统三层架构**：
+- Entity: `{package}.entity`
+- DAO: `{package}.dao`
+- Service: `{package}.service`
+- ServiceImpl: `{package}.service.impl`
+
+**垂直切分（模块化）**：
+- Entity: `{package}.{module}.entity`
+- DAO: `{package}.{module}.dao`
+- Service: `{package}.{module}.service`
+- ServiceImpl: `{package}.{module}.service.impl`
+
+详细说明请参考：[../reference/package-structure.md](../reference/package-structure.md)
+
+### 完整示例（标准目录结构）
 
 ```
-com.example.userservice/
+com.sunway.sxzz/
 ├── controller/
 │   └── user/
 │       ├── dto/
@@ -173,17 +245,28 @@ com.example.userservice/
 │       │   └── UserEdit.java
 │       ├── vo/
 │       │   └── UserInfo.java
-│       └── CustomerController.java
+│       └── UserController.java
 │
-└── customer/
-    ├── entity/
-    │   └── Customer.java
-    ├── dao/
-    │   └── CustomerDao.java
-    ├── service/
-    │   └── CustomerService.java
-    └── service/impl/
-        └── CustomerServiceImpl.java
+├── common/
+│   ├── pojo/
+│   │   └── JpaCommonBean.java
+│   └── util/
+│
+├── core/
+│   ├── config/
+│   └── exception/
+│
+└── modules/
+    └── account/
+        └── suser/
+            ├── entity/
+            │   └── User.java
+            ├── dao/
+            │   └── UserDao.java
+            ├── service/
+            │   └── UserService.java
+            └── service/impl/
+                └── UserServiceImpl.java
 ```
 
 ---
@@ -208,14 +291,14 @@ com.example.userservice/
 
 ### 高内聚
 
-每个模块包含完整的业务功能，内部高度内聚：
+每个子模块包含完整的业务功能，内部高度内聚：
 
 ```
-customer/
-├── entity/Customer.java
-├── dao/CustomerDao.java
-├── service/CustomerService.java
-└── service/impl/CustomerServiceImpl.java
+modules/account/suser/
+├── entity/User.java
+├── dao/UserDao.java
+├── service/UserService.java
+└── service/impl/UserServiceImpl.java
 ```
 
 ### 低耦合
@@ -224,21 +307,48 @@ customer/
 
 ```java
 // ✅ 正确：依赖接口
-@PathRestController("order")
-public class OrderController {
-    private final OrderService orderService;
-    private final CustomerService customerService;  // 跨模块调用
+@PathRestController("user")
+public class UserController {
+    private final UserService userService;
+    private final OrganizationService organizationService;  // 跨子模块调用
 
-    public OrderController(OrderService orderService,
-                          CustomerService customerService) {
-        this.orderService = orderService;
-        this.customerService = customerService;
+    public UserController(UserService userService,
+                         OrganizationService organizationService) {
+        this.userService = userService;
+        this.organizationService = organizationService;
     }
 }
 
 // ❌ 错误：依赖实现类
-private final CustomerServiceImpl customerService;
+private final UserServiceImpl userService;
 ```
+
+### 大模块规划
+
+将相关子模块组织在大模块下：
+
+```
+modules/
+├── account/          # 账户大模块
+│   ├── suser/       # 用户子模块
+│   ├── role/        # 角色子模块
+│   ├── org/         # 组织子模块
+│   └── security/    # 安全子模块
+│
+├── biz/             # 业务大模块
+│   └── ...
+│
+└── file/            # 文件大模块（也可以不再细分子模块）
+    ├── entity/
+    ├── dao/
+    ├── service/
+    └── service/impl/
+```
+
+**原则**：
+- 大模块按业务领域划分（如 account、biz、file、logs）
+- 子模块进一步细化功能（如 suser、role、org、security）
+- 如果大模块功能简单，可以不再细分子模块
 
 ---
 
