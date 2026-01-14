@@ -270,11 +270,12 @@ import org.springframework.util.StringUtils;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
-public class UserServiceImpl extends J2ServiceImpl<User>
+public class UserServiceImpl extends J2ServiceImpl<UserDao, User, Long>
     implements UserService {
 
-    private final UserDao userDao;
+    public UserServiceImpl() {
+        super(User.class);
+    }
 
     @Override
     public Optional<User> findByLoginName(String loginName) {
@@ -495,7 +496,9 @@ import org.springframework.web.bind.annotation.*;
         @ExtensionProperty(name = "x-order", value = "3", parseValue = true)
     })
 })
-@RequiredArgsConstructor
+public CustomerServiceImpl() {
+        super(Customer.class);
+    }
 @Slf4j
 @Validated
 public class UserController {

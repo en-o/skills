@@ -15,7 +15,9 @@ Controller 使用 `@PathRestController` 注解，统一返回 `ResultVO` 或 `Re
         @ExtensionProperty(name = "x-order", value = "3", parseValue = true)
     })
 })
-@RequiredArgsConstructor
+public CustomerServiceImpl() {
+        super(Customer.class);
+    }
 @Slf4j
 @Validated
 public class CustomerController {

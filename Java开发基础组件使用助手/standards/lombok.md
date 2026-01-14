@@ -227,8 +227,10 @@ public class CustomerController {
 ```java
 // ✅ 正确
 @Service
-@RequiredArgsConstructor
-public class CustomerServiceImpl extends J2ServiceImpl<Customer>
+public CustomerServiceImpl() {
+        super(Customer.class);
+    }
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
     implements CustomerService {
 
     private final CustomerDao customerDao;
@@ -241,7 +243,7 @@ public class CustomerServiceImpl extends J2ServiceImpl<Customer>
 
 // ✅ 正确（手动构造器注入）
 @Service
-public class CustomerServiceImpl extends J2ServiceImpl<Customer>
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
     implements CustomerService {
 
     private final CustomerDao customerDao;

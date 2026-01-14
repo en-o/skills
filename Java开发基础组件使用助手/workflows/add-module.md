@@ -264,7 +264,7 @@ public interface CustomerService extends J2Service<Customer> {
 ```java
 // {module}/service/impl/CustomerServiceImpl.java
 @Service
-public class CustomerServiceImpl extends J2ServiceImpl<Customer>
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
     implements CustomerService {
 
     private final CustomerDao customerDao;
@@ -281,10 +281,8 @@ public class CustomerServiceImpl extends J2ServiceImpl<Customer>
 ```
 
 **关键点**：
-- 继承 `J2ServiceImpl<Entity>`
-- 实现 `CustomerService` 接口
-- 使用构造器注入 DAO
-- 使用框架提供的基础方法（findOne、save、update 等）
+- 继承 `J2ServiceImpl<DAO, Entity, ID>`（三个泛型参数）
+- 使用构造器调用 `super(Entity.class)`
 
 ---
 

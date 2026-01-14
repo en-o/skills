@@ -172,9 +172,10 @@ modules.account.suser.entity.User
 
 **规范**：
 - 接口继承 `J2Service<Entity>`
-- 实现类继承 `J2ServiceImpl<Entity>`
+- 实现类继承 `J2ServiceImpl<DAO, Entity, ID>`
+- 实现类构造函数调用 `super(Entity.class)`
 - 使用 `@Service` 注解
-- 使用构造器注入 DAO
+- DAO 由框架自动注入，无需手动注入
 
 ### DAO 层
 
@@ -208,15 +209,15 @@ modules.account.suser.entity.User
 
 | 层次 | 包路径规范 | 示例 |
 |------|-----------|------|
-| Controller | `{package}.controller.{domain}` | `com.sunway.sxzz.controller.user` |
-| DTO/VO | `{package}.controller.{domain}.dto/vo` | `com.sunway.sxzz.controller.user.dto` |
-| 大模块 | `{package}.modules.{module}` | `com.sunway.sxzz.modules.account` |
-| 子模块 Entity | `{package}.modules.{module}.{submodule}.entity` | `com.sunway.sxzz.modules.account.suser.entity` |
-| 子模块 DAO | `{package}.modules.{module}.{submodule}.dao` | `com.sunway.sxzz.modules.account.suser.dao` |
-| 子模块 Service | `{package}.modules.{module}.{submodule}.service` | `com.sunway.sxzz.modules.account.suser.service` |
-| 子模块 ServiceImpl | `{package}.modules.{module}.{submodule}.service.impl` | `com.sunway.sxzz.modules.account.suser.service.impl` |
-| 公共组件 | `{package}.common.{component}` | `com.sunway.sxzz.common.pojo` |
-| 核心配置 | `{package}.core.{component}` | `com.sunway.sxzz.core.config` |
+| Controller | `{package}.controller.{domain}` | `cn.tannn.example.sxzz.controller.user` |
+| DTO/VO | `{package}.controller.{domain}.dto/vo` | `cn.tannn.example.sxzz.controller.user.dto` |
+| 大模块 | `{package}.modules.{module}` | `cn.tannn.example.sxzz.modules.account` |
+| 子模块 Entity | `{package}.modules.{module}.{submodule}.entity` | `cn.tannn.example.sxzz.modules.account.suser.entity` |
+| 子模块 DAO | `{package}.modules.{module}.{submodule}.dao` | `cn.tannn.example.sxzz.modules.account.suser.dao` |
+| 子模块 Service | `{package}.modules.{module}.{submodule}.service` | `cn.tannn.example.sxzz.modules.account.suser.service` |
+| 子模块 ServiceImpl | `{package}.modules.{module}.{submodule}.service.impl` | `cn.tannn.example.sxzz.modules.account.suser.service.impl` |
+| 公共组件 | `{package}.common.{component}` | `cn.tannn.example.sxzz.common.pojo` |
+| 核心配置 | `{package}.core.{component}` | `cn.tannn.example.sxzz.core.config` |
 
 ### 其他包结构路径
 
@@ -237,7 +238,7 @@ modules.account.suser.entity.User
 ### 完整示例（标准目录结构）
 
 ```
-com.sunway.sxzz/
+cn.tannn.example.sxzz/
 ├── controller/
 │   └── user/
 │       ├── dto/

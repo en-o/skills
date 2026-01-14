@@ -199,7 +199,7 @@ grep -r "public.*{" --include="*Controller.java" controller/ | \
 ### 检查项
 
 - [ ] Service 接口继承 `J2Service<Entity>`
-- [ ] Service 实现继承 `J2ServiceImpl<Entity>`
+- [ ] Service 实现继承 `J2ServiceImpl<DAO, Entity, ID>`
 - [ ] 实现类使用 `@Service` 注解
 - [ ] 使用构造器注入 DAO
 - [ ] 方法命名遵循规范（findByXxx、saveOne、updateOne 等）

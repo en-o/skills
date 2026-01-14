@@ -187,7 +187,7 @@ public interface CustomerService extends J2Service<Customer> {
 }
 
 @Service
-public class CustomerServiceImpl extends J2ServiceImpl<Customer>
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
     implements CustomerService {
     // 实现
 }

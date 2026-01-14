@@ -26,7 +26,7 @@
    - 示例：user-service
 
 2. **包路径**
-   - 询问：请提供 Java 包路径（例如：com.example.userservice）
+   - 询问：请提供 Java 包路径（例如：cn.tannn.example.userservice）
    - 说明：遵循反向域名规范
    - 示例：com.company.projectname
 
