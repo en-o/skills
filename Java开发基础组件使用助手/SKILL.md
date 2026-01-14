@@ -1,343 +1,132 @@
 ---
 name: Java开发基础组件使用助手
-description: 该技能是用于开发java项目的基础依赖使用参考和说明，辅助更好的生成符合代码习惯的代码和风格
+description: JDevelops 框架的代码生成助手，用于创建、改进、新增符合规范的 Spring Boot 3.x + JPA 代码。在以下场景自动激活：创建 Spring Boot 项目、新增业务模块、编写 JPA 实体类、开发 REST API、使用 PathRestController、ApiMapping、J2Service、JpaCommonBean 等框架特性、改进现有代码使其符合规范、扩展功能时需要遵循框架最佳实践。
 ---
 
 # Java开发基础组件使用助手
 
-## 基础规则
-- 必须使用 jdk17
-- 必须使用 spring boot 3.x, 默认使用3.2.7版本
-- 数据库操作必须使用 spring boot jpa 方式操作数据库
-- 接口参数类不允许以vo dto结尾，尽量以意图名，比如 UserEdit, UserAdd, UserDelete 等
-- 接口返回参数处理必要的包裹类，不允许以vo dto结尾，尽量以意图名，非必要则以直接返回实体，如需要脱敏等处理则返回意图如：UserInfo
+## 🎯 核心能力
 
+此技能帮助您生成符合 JDevelops 框架规范的代码，涵盖：
+- ✅ 创建新项目（基于标准架构）
+- ✅ 新增业务模块（Entity → DAO → Service → Controller）
+- ✅ 改进现有代码（规范检查和重构）
+- ✅ 扩展功能（遵循框架最佳实践）
 
-## 接口类结构规则
-- 必须使用`ResultVO<T>`包裹返回结果，其中T为具体数据类型
-- 必须使用 `@Operation(summary = "接口说明")` 注解标注接口说明
-- 如果是`GET`请求，必须使用 `@Parameter(name = "参数名", description = "说明")` 注解标注接口参数
-- 如果是`POST`请求，必须使用 `@RequestBody`和`@Valid` 注解标注接口参数
-- 如果接口不用鉴权 `@ApiMapping(value = "接口路径", method = RequestMethod.GET/POST, checkToken = true/false)` 注解标注接口路径和请求方式
-- 如果正常鉴权则可以使用常规的`@GetMapping` `@PostMapping` 等注解标注接口路径和请求方式
-- 类上必须使用 `@Tag(name = "模块名称", description = "模块说明")` 注解标注接口模块
-- 类上使用 `@PathRestController("访问前缀")` 代替 `@RestController`和`@RequestMapping`  注解标注访问前缀和JSON接口返回格式
-- 类上必须使用 `@RequiredArgsConstructor` 注解标注，使用构造器注入依赖
-- 类上必须使用 `@Slf4j` 注解标注，用于日志记录
-- 类上看情况使用 `@Validated` 注解标注，用于参数校验
-- 分页接口必须使用`ResultPageVO<T, JpaPageResult<T>>`包裹返回结果，其中T为具体数据类型
+## 🚀 快速开始
 
+### 根据任务类型选择工作流
 
-## 实体类结构规则
-- 使用spring boot jpa的方式定义实体类，包括主键、字段、索引、约束等
-- 使用 `@Entity` 注解标注实体类
-- 使用 `@Id` 注解标注主键字段
-- 使用 `@GeneratedValue(strategy = GenerationType.IDENTITY)` 注解标注主键生成策略
-- 使用 `@Column` 注解标注字段，包括字段名、是否唯一、是否允许为空、是否索引等
-- 使用 `@Index` 注解标注索引，包括索引名、字段名、是否唯一等
-- 使用 `@Constraint` 注解标注约束，包括约束名、字段名、约束类型、约束参数等
-- 使用 `@Table` 注解标注表名，包括表名、是否唯一等
-- 使用 `@EntityListeners(AuditingEntityListener.class)` 注解标注实体类，用于自动记录创建时间、更新时间等
-- 使用`jakarta.persistence.Column` `@Comment("登录日志")` 注解标注字段和表注释
-- 使用`io.swagger.v3.oas.annotations.media.Schema` `@Schema` 标注swagger文档的实体和字段注释信息
-- 使用`com.fasterxml.jackson.annotation` `@JsonFormat(locale = "zh", timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")` 对时间类型字段进行标记格式化
-- 使用 `@Enumerated(EnumType.STRING)` 标记枚举类型字段，用于数据库存储枚举值的字符串表示
-- 使用 `@ColumnDefault("0")` 标注字的段默认值,注意如果是字符串需要加上引号，例如`@ColumnDefault("'0'")`
-- 如果是自定义类必须继承`SerializableBean<T>`类，用于序列化和反序列化,T为泛型类型，例如`SerializableBean<User>`
-- 如果需要公共字段，例如创建时间、更新时间等，必须继承`JpaCommonBean2`,如果没有可以实现一个
-- 如果是
+**创建新项目？** → 查阅 [workflows/create-project.md](workflows/create-project.md)
+**新增业务模块？** → 查阅 [workflows/add-module.md](workflows/add-module.md)
+**改进现有代码？** → 查阅 [workflows/modify-code.md](workflows/modify-code.md)
+**扩展功能？** → 查阅 [workflows/extend-feature.md](workflows/extend-feature.md)
 
-## 示例
+## 📚 在线参考资源
 
-### 接口示例
-```java
-/**
- * 邮箱接口
- *
- * @author <a href="https://t.tannn.cn/">tan</a>
- * @version V1.0
- * @date 2025/3/17 15:44
- */
-@Tag(name = "邮箱管理", description = "邮箱管理")
-@PathRestController("email")
-@RequiredArgsConstructor
-@Slf4j
-@Validated
-public class EmailController {
+### 框架源码
+**GitHub 仓库**：https://github.com/en-o/Jdevelops
 
+用途：
+- 查看最新 API 实现
+- 确认包路径和方法签名
+- 理解框架设计思路
 
-    private final RedisOperateService redisOperateService;
-    private final EmailService emailService;
+### 官方文档
+**语雀知识库**：https://www.yuque.com/tanning/yg9ipo
 
+用途：
+- API 使用说明
+- 配置指南
+- 最佳实践
 
-    @Operation(summary = "获取邮箱验证码")
-    @ApiMapping(value = "verificationCode", method = RequestMethod.GET, checkToken = false)
-    @Parameter(name = "toEmail", description = "邮箱", required = true)
-    @Parameter(name = "type", description = "验证码类型 1:注册，2修改密码,3.邮箱换绑", required = true)
-    public ResultVO<String> verificationCode(@RequestParam("toEmail") String toEmail, @RequestParam("type") Integer type) {
-        emailService.emailVerificationCode(toEmail, type);
-        return ResultVO.successMessage("验证码发送成功");
-    }
-
-    @PostMapping("select")
-    @Operation(summary = "分页查询角色")
-    @ApiOperationSupport(order = 1)
-    @ApiPlatform(platform = PlatformConstant.WEB_ADMIN)
-    public ResultPageVO<Role, JpaPageResult<Role>> selectRole(@RequestBody @Valid RolePage role) {
-        Page<Role> roles = roleService.findPage(role, role.getPage());
-        JpaPageResult<Role> pageResult = JpaPageResult.toPage(roles);
-        return ResultPageVO.success(pageResult, "查询成功");
-    }
-}
+### 下载文档到本地
+如需离线查阅文档，运行：
+```bash
+bash scripts/download-docs.sh
 ```
 
+详细说明：[reference/online-resources.md](reference/online-resources.md)
 
-### 实体示例
-```java
+## 📐 核心规范速查
 
-/**
- * 账户基础信息表
- *
- * @author tnnn
- * @version V1.0
- * @date 2023-10-25
- */
-@Entity
-@Table(name = "tb_account",
-        indexes = {
-                @Index(name = "idx_loginName", columnList = "loginName", unique = true)
-        }
-)
-@Comment("账户基础信息表")
-@Getter
-@Setter
-@ToString
-@DynamicUpdate
-@DynamicInsert
-@Schema(description = "账户基础信息表")
-@JsonView({Views.Public.class})
-public class Account extends JpaCommonBean2<Account> {
-    /**
-     * 登录名
-     */
-    @Column(columnDefinition = " varchar(100)  not null ")
-    @Comment("登录名")
-    @Schema(description = "登录名")
-    private String loginName;
+### 强制规范（MUST）
+- ✅ JDK 17 + Spring Boot 3.x（默认 3.2.7）
+- ✅ 使用 JPA 操作数据库
+- ✅ **禁止** VO/DTO 后缀，使用意图命名（UserAdd、UserEdit、UserInfo）
+- ✅ **禁止** @Data 注解，按需使用 @Getter/@Setter/@ToString
+- ✅ Controller 使用 `@PathRestController`（框架自定义）
+- ✅ Service 继承 `J2Service<Entity>`
+- ✅ Entity 继承 `JpaCommonBean` 或 `JpaCommonBean2`
+- ✅ 统一返回 `ResultVO<T>` 或 `ResultPageVO<T, JpaPageResult<T>>`
 
-    /**
-     * 登录密码
-     */
-    @Column(columnDefinition = " varchar(100) not null ")
-    @Comment("登录密码")
-    @Schema(description = "登录密码")
-    @JsonView(Views.UserPassword.class)
-    private String password;
+详细规范：
+- 架构规范 → [standards/architecture.md](standards/architecture.md)
+- 命名规范 → [standards/naming.md](standards/naming.md)
+- Lombok 规范 → [standards/lombok.md](standards/lombok.md)
+- 注解规范 → [standards/annotations.md](standards/annotations.md)
 
+### 分层代码生成指南
+- Entity 层 → [guides/entity.md](guides/entity.md)
+- Controller 层 → [guides/controller.md](guides/controller.md)
+- Service 层 → [guides/service.md](guides/service.md)
+- 请求/响应类 → [guides/request-response.md](guides/request-response.md)
 
-    /**
-     * 性别:0[未知]，1[男性]，2[女性]
-     */
-    @Column(columnDefinition = "smallint")
-    @ColumnDefault("0")
-    @Comment("性别:0[未知]，1[男性]，2[女性]")
-    @Schema(description = "性别:0[未知]，1[男性]，2[女性]")
-    private Integer gender;
-
-    /**
-     * 用户真实姓名
-     */
-    @Column(columnDefinition = " varchar(200)")
-    @Schema(description = "用户真实姓名")
-    @Comment("用户真实姓名")
-    private String name;
-
-    /**
-     * 用户昵称
-     */
-    @Column(columnDefinition = " varchar(200)")
-    @Comment("用户昵称")
-    @Schema(description = "用户昵称")
-    private String nickname;
-
-
-    /**
-     * 账号状态:1[正常],2[锁定],3[回收站-逻辑删除]
-     *
-     * @see AccountStatus
-     */
-    @Column(columnDefinition = "smallint")
-    @ColumnDefault("2")
-    @Comment("账号状态:1[正常],2[锁定],3[回收站-逻辑删除]")
-    @Schema(description = "账号状态:1[正常],2[锁定],3[回收站-逻辑删除]")
-    private Integer status;
-
-    /**
-     * 账号类型:0[内置]，1[添加]，2[注册]，3[同步]
-     *
-     * @see AccountType
-     */
-    @Column(columnDefinition = "smallint")
-    @ColumnDefault("2")
-    @Comment("账号类型:0[内置]，1[添加]，2[注册]，3[同步]")
-    @Schema(description = "账号类型:0[内置]，1[添加]，2[注册]，3[同步]")
-    private Integer type;
-
-
-    /**
-     * 可用状态:-1[待激活](数据不支持)，0[已激活](数据不支持)，1[审核中](默认)，2[审核通过]，3[审核不通过]
-     *
-     * @see AccountAvailableStatus
-     */
-    @Column(columnDefinition = "smallint")
-    @ColumnDefault("1")
-    @Comment("可用状态:-1[待激活](数据不支持)，0[已激活](数据不支持)，1[审核中]，2[审核通过]，3[审核不通过]")
-    @Schema(description = "可用状态:-1[待激活](数据不支持)，0[已激活](数据不支持)，1[审核中]，2[审核通过]，3[审核不通过]")
-    private Integer available;
-
-    /**
-     * 错误消息备注
-     * <p>比如被设置删除后，设置当前账户被回收</p>
-     * <p>审核不通过时，设置不通过原因等</p>
-     */
-    @Column(columnDefinition = " varchar(200)")
-    @Comment("错误消息备注")
-    @Schema(description = "错误消息备注")
-    private String errorMessage;
-
-
-    /**
-     * 最后登录时间
-     */
-    @Column(columnDefinition = "timestamp")
-    @Comment("最后登录时间")
-    @Schema(description = "最后登录时间")
-    @JsonFormat(locale = "zh", timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    public LocalDateTime lastLoginTime;
-
-
-    /**
-     * 密码过期时间[为空永不过期]
-     * <p>todo 后期考虑系统设置全局过期时间例如三个月，这里就可以选择使用系统全局还是自定义</p>
-     * <p>todo 后期需要做线程处理过期密码的自动退出</p>
-     */
-    @Column(columnDefinition = "timestamp")
-    @Comment("密码过期时间[为空永不过期]")
-    @Schema(description = "密码过期时间[为空永不过期]")
-    @JsonFormat(locale = "zh", timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    public LocalDateTime passwordExpireTime;
-
-    /**
-     * 用户过期时间[为空永不过期]
-     * <p>todo 后期考虑系统设置全局过期时间例如三个月，这里就可以选择使用系统全局还是自定义</p>
-     * <p>todo 后期需要做线程处理过期账户的自动退出</p>
-     */
-    @Column(columnDefinition = "timestamp")
-    @Comment("用户过期时间[为空永不过期]")
-    @Schema(description = "用户过期时间[为空永不过期]")
-    @JsonFormat(locale = "zh", timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    public LocalDateTime userExpireTime;
-
-    /**
-     * 是否为默认密码:0[否]，1[是]
-     * <p> todo 后期将默认密码的设置配置文件移到SysConfig书就看
-     */
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    @Comment("是否为默认密码:0[否]，1[是]")
-    @Schema(description = "是否为默认密码:0[否]，1[是]")
-    private Boolean defaultPassword;
-
-    /**
-     * 是否强制修改默认密码:0[否]，1[是]
-     * <p>默认密码的情况下是否需要强制修改密码</p>
-     */
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    @Comment("是否强制修改默认密码:0[否]，1[是]")
-    @Schema(description = "是否强制修改默认密码:0[否]，1[是]")
-    private Boolean forcePasswordChange;
-
-
-    /**
-     * 注册IP
-     */
-    @Column(columnDefinition = " varchar(200)")
-    @Comment("注册IP")
-    @Schema(description = "注册IP")
-    private String registerIp;
-
-    /**
-     * 注册平台
-     *
-     * @see PlatformType
-     */
-    @Comment("注册平台")
-    @Schema(description = "注册平台")
-    @Column(columnDefinition = "varchar(20) default 'PC'")
-    @Enumerated(EnumType.STRING)
-    private PlatformType registerPlatform;
-
-
-    /**
-     * 组织编码
-     *
-     * @see Organization#getNo()
-     */
-    @Comment("组织编码")
-    @Schema(description = "组织编码")
-    @Column(columnDefinition = "varchar(100) ")
-    private String orgNo;
-
-    /**
-     * 冗余组织名
-     *
-     * @see Organization#getName()
-     */
-    @Comment("冗余组织名")
-    @Schema(description = "冗余组织名")
-    @Column(columnDefinition = "varchar(200) ")
-    private String orgName;
-
-
-    /**
-     * 备注
-     */
-    @Column(columnDefinition = " varchar(200)")
-    @Comment("备注")
-    private String remark;
-
-}
-```
-实体公共字段
-```java
-/**
- * 公共的实体类- 处理时间的 建议用这个
- * @author tn
- * @date 2021-01-21 14:20
- */
-@MappedSuperclass
-@DynamicInsert
-@DynamicUpdate
-@SelectBeforeUpdate
-@Access(AccessType.FIELD)
-@Getter
-@Setter
-public class JpaCommonBean2<B> extends JpaAuditTimeFormatFields<B> {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuidCustomGenerator")
-    @GenericGenerator(name = "uuidCustomGenerator", type = UuidCustomGenerator.class)
-    @Column(columnDefinition="bigint")
-    @Comment("uuid")
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
-
-    @Override
-    public String toString() {
-        return "CommonBean{" +
-               "id=" + id +
-               '}';
-    }
-}
-
+## 📦 标准项目结构
 
 ```
+src/main/java/
+├── controller/{domain}/     # 控制器层（按业务域划分）
+│   ├── dto/                # 请求类（UserAdd、UserEdit、UserPage）
+│   ├── vo/                 # 响应类（UserInfo，仅在需要时创建）
+│   └── *Controller.java
+│
+├── {module}/               # 业务模块（垂直拆分）
+│   ├── entity/            # JPA 实体
+│   ├── dao/               # DAO 接口
+│   ├── service/           # Service 接口
+│   └── service/impl/      # Service 实现
+│
+└── common/                # 公共组件
+    ├── exception/         # 自定义异常
+    └── pojo/              # 公共POJO
+```
+
+详细说明：[standards/architecture.md](standards/architecture.md)
+
+## 🔍 代码生成检查清单
+
+生成代码后，必须验证：
+- [ ] 包路径符合规范（controller.{domain} 或 {module}.{layer}）
+- [ ] 继承了正确的框架基类（J2Service、JpaCommonBean）
+- [ ] 使用了框架注解（@PathRestController、@ApiMapping）
+- [ ] 统一返回格式（ResultVO/ResultPageVO）
+- [ ] 命名无 VO/DTO 后缀，使用意图命名
+- [ ] 禁用了 @Data，使用按需的 Lombok 注解
+- [ ] 敏感字段使用了 @JsonIgnore 或 @JsonView
+- [ ] Long 类型字段添加了 @JsonSerialize(using = ToStringSerializer.class)
+- [ ] 添加了 Swagger 文档注解（@Operation、@Tag）
+
+完整清单：[workflows/modify-code.md](workflows/modify-code.md)
+
+## 📚 完整示例
+
+查看包含所有层的完整模块示例：[examples/complete-module.md](examples/complete-module.md)
+
+## 🔑 查阅策略
+
+```
+遇到 API 不确定
+    ↓
+查阅官方文档（https://www.yuque.com/tanning/yg9ipo）
+    ↓
+找到了？ → 按文档说明使用
+    ↓ 没找到
+查看 GitHub 源码（https://github.com/en-o/Jdevelops）
+    ↓
+确认方法签名和包路径
+    ↓
+生成符合规范的代码
+```
+
+详细策略：[reference/lookup-strategy.md](reference/lookup-strategy.md)
