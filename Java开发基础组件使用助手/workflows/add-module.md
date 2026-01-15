@@ -215,6 +215,18 @@ AI: "好的，我来更新需求总结：
 
 **需求确认后，制定详细的开发计划**：
 
+**⚠️ 重要：在制定开发计划前，必须完成 Entity 字段设计确认**
+
+参考：[requirement-analysis.md - 步骤 6.5: Entity 字段设计确认](./requirement-analysis.md#步骤-65-entity-字段设计确认重要)
+
+对每个 Entity 进行详细的字段设计确认：
+- 展示完整的字段清单（字段名、类型、长度、约束）
+- 询问用户是否满意
+- 支持新增、删除、修改字段
+- 迭代直到用户对所有 Entity 的字段设计都满意
+
+**Entity 字段确认完成后，再制定开发计划**：
+
 ```markdown
 【开发计划】
 
@@ -311,10 +323,97 @@ AI: "好的，我来更新需求总结：
    - 检查 `src/main/java` 目录
 4. 如果验证失败，提示用户并重新询问路径
 
+**⚠️ 重要：自动检测项目框架**
+
+路径确认后，**必须**读取 `pom.xml` 文件，检测项目使用的框架：
+
+```bash
+# 读取 pom.xml
+cat pom.xml
+```
+
+**检测规则**：
+1. **检查是否使用 JDevelops 框架**：
+   - 查找依赖：`<groupId>cn.tannn.jdevelops</groupId>`
+   - 查找组件：`jdevelops-spring-boot-starter`、`jdevelops-dals-jpa` 等
+
+2. **如果找到 JDevelops 依赖**：
+   ```
+   "检测到项目使用 JDevelops 框架！
+
+   【项目信息】
+   - 框架：JDevelops
+   - JDevelops 版本：{version}
+   - 已安装组件：
+     - jdevelops-spring-boot-starter
+     - jdevelops-dals-jpa
+     - jdevelops-apis-exception
+     - ...
+
+   将按照 JDevelops 框架规范生成代码：
+   ✓ Entity 继承 JpaCommonBean
+   ✓ Service 继承 J2Service
+   ✓ Controller 使用 @PathRestController
+   ✓ 统一返回格式 ResultVO
+   "
+   ```
+
+3. **如果未找到 JDevelops 依赖**：
+   ```
+   "检测到项目为纯 Spring Boot 项目！
+
+   【项目信息】
+   - 框架：Spring Boot
+   - Spring Boot 版本：{version}
+   - JPA：Spring Data JPA
+
+   将按照标准 Spring Boot 规范生成代码：
+   ✓ Entity 使用标准 JPA 注解
+   ✓ Repository 继承 JpaRepository
+   ✓ Service 自定义接口
+   ✓ Controller 使用 @RestController
+   "
+   ```
+
+4. **记录框架类型供后续使用**：
+   - 设置标记：`framework_type = "jdevelops"` 或 `"spring-boot"`
+   - 后续代码生成根据此标记选择不同的模板和规范
+
+**检测示例**：
+
+```xml
+<!-- 如果 pom.xml 包含这样的依赖 -->
+<dependencies>
+    <dependency>
+        <groupId>cn.tannn.jdevelops</groupId>
+        <artifactId>jdevelops-spring-boot-starter</artifactId>
+        <version>1.0.3</version>
+    </dependency>
+    ...
+</dependencies>
+
+→ 判定为 JDevelops 框架项目
+```
+
+```xml
+<!-- 如果 pom.xml 只包含标准 Spring 依赖 -->
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    ...
+</dependencies>
+
+→ 判定为纯 Spring Boot 项目
+```
+
 **确认后的操作**:
-- 切换到项目根目录（如果需要）
+- 记录项目根路径
+- 记录框架类型（JDevelops 或 Spring Boot）
 - 读取 `pom.xml` 或 `build.gradle` 确认项目信息
 - 检查现有包结构，确定是否为首次添加模块
+- 后续代码生成使用对应的规范和模板
 
 #### 1. 项目描述和业务场景
 

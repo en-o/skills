@@ -1,23 +1,52 @@
 ---
 name: Java开发基础组件使用助手
-description: 用于 JDevelops 框架开发的代码生成助手，生成符合规范的 Spring Boot 3.x + JPA 代码。在使用 JDevelops 框架、开发 REST API、编写 Entity/Service/Controller、使用 PathRestController、J2Service、JpaCommonBean、需要遵循代码规范时使用。
+description: 用于 JDevelops 框架或纯 Spring Boot 开发的代码生成助手，生成符合规范的 Spring Boot 3.x + JPA 代码。支持 JDevelops 框架开发、纯 Spring Boot 开发、REST API、Entity/Service/Controller 开发。
 ---
 
 # Java开发基础组件使用助手
 
 ## 🎯 核心能力
 
-此技能帮助您生成符合 JDevelops 框架规范的代码，涵盖：
-- ✅ 创建新项目（基于标准架构）
+此技能帮助您生成符合规范的 Spring Boot 3.x 代码，涵盖：
+- ✅ 创建新项目（JDevelops 框架或纯 Spring Boot）
 - ✅ 新增业务模块（Entity → DAO → Service → Controller）
 - ✅ 改进现有代码（规范检查和重构）
 - ✅ 扩展功能（遵循框架最佳实践）
+
+### 支持的技术栈
+
+**JDevelops 框架模式**：
+- Spring Boot 3.x + JPA
+- JDevelops 框架组件（J2Service、JpaCommonBean、PathRestController 等）
+- 统一返回格式（ResultVO、ResultPageVO）
+- 框架注解和工具类
+
+**纯 Spring Boot 模式**：
+- Spring Boot 3.x + JPA
+- 标准 Spring Data JPA
+- 标准 @RestController
+- 自定义返回格式或标准格式
 
 ## 🚀 快速开始
 
 ### 📋 需求分析和确认流程（首要步骤）
 
 **在开始任何代码生成前，必须完成需求分析和确认流程**：
+
+#### 🔍 框架选择和检测
+
+**创建新项目时**：
+- 如果用户未明确说明使用 JDevelops 框架，**必须询问**选择：
+  - 【选项 A】JDevelops 框架（推荐）
+  - 【选项 B】纯 Spring Boot
+- 根据用户选择采用对应的规范和模板
+
+**添加功能/修改项目时**：
+- **自动检测**项目使用的框架（无需询问）
+- 读取 `pom.xml` 文件检查依赖：
+  - 找到 `cn.tannn.jdevelops` → JDevelops 框架项目
+  - 只有标准 Spring 依赖 → 纯 Spring Boot 项目
+- 通知用户检测结果，使用对应规范生成代码
 
 #### 流程图
 
