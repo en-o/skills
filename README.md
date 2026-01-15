@@ -145,6 +145,7 @@ ps:
 | 项目 | .claude/skills/   | 在此存储库中工作的任何人 |
 | 插件 | 与插件捆绑             | 安装了该插件的任何人   |
 
+![img.png](docs/images/skills_path.png)
 
 
 # 使用示例
