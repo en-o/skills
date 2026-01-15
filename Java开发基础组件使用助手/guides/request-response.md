@@ -65,27 +65,320 @@ public class UserEdit {
 
 ### 分页查询请求类
 
+分页查询有两种实现模式：
+
+#### 模式1：使用 @JpaSelectOperator 注解（自动查询）
+
+**适用场景**：简单的等值查询、区间查询等标准条件
+
+**特点**：框架自动根据注解构建查询条件
+
 ```java
-// controller/user/dto/UserPage.java
+// controller/logs/dto/LogEsInitDataPage.java
+import cn.tannn.jdevelops.annotations.jpa.JpaSelectIgnoreField;
+import cn.tannn.jdevelops.annotations.jpa.JpaSelectOperator;
+import cn.tannn.jdevelops.annotations.jpa.enums.SQLConnect;
+import cn.tannn.jdevelops.annotations.jpa.enums.SQLOperatorWrapper;
+import cn.tannn.jdevelops.jpa.request.PagingSorteds;
+import cn.tannn.jdevelops.result.bean.SerializableBean;
+
+@Schema(description = "ES初始化数据日志 分页查询参数")
+@ToString
 @Getter
 @Setter
-@ToString
-public class UserPage extends PageQuery {
+public class LogEsInitDataPage extends SerializableBean<LogEsInitDataPage> {
 
-    @Schema(description = "登录名")
-    private String loginName;
+    /**
+     * 数据库表英文名称（等值查询）
+     */
+    @Schema(description = "数据库表英文名称")
+    @JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.EQ, connect = SQLConnect.AND)
+    private String tableEnName;
 
-    @Schema(description = "状态")
-    private Integer status;
+    /**
+     * 索引名称（等值查询）
+     */
+    @Schema(description = "索引名称")
+    @JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.EQ, connect = SQLConnect.AND)
+    private String indexName;
 
-    @Schema(description = "开始时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startTime;
+    /**
+     * 分页排序（不参与查询条件）
+     */
+    @Schema(description = "分页排序")
+    @JpaSelectIgnoreField
+    @Valid
+    private PagingSorteds page;
 
-    @Schema(description = "结束时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endTime;
+    /**
+     * 设置默认排序
+     */
+    public PagingSorteds getPage() {
+        if (page == null) {
+            return new PagingSorteds().fixSort(1, "createTime");
+        }
+        page.fixSort(1, "createTime");
+        return page;
+    }
 }
+```
+
+**常用查询操作符**：
+
+```java
+// 等值查询
+@JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.EQ, connect = SQLConnect.AND)
+private String status;
+
+// 模糊查询
+@JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.LIKE, connect = SQLConnect.AND)
+private String keyword;
+
+// 区间查询（BETWEEN）
+@JpaSelectOperator(
+    operatorWrapper = SQLOperatorWrapper.BETWEEN,
+    connect = SQLConnect.AND,
+    function = SpecBuilderDateFun.DATE_FORMAT
+)
+private String operatorTime;  // 格式：开始时间,结束时间
+
+// 大于等于
+@JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.GE, connect = SQLConnect.AND)
+private Integer minAge;
+
+// 小于等于
+@JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.LE, connect = SQLConnect.AND)
+private Integer maxAge;
+
+// IN 查询
+@JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.IN, connect = SQLConnect.AND)
+private List<String> types;
+```
+
+#### 模式2：使用 @JpaSelectIgnoreField + 自定义 Specification（手动查询）
+
+**适用场景**：复杂的动态查询、多条件组合、需要函数处理等
+
+**特点**：手动构建查询条件，灵活性高
+
+**步骤1：定义分页请求类**
+
+```java
+// controller/front/dto/ResourceUseLogPage.java
+import cn.tannn.jdevelops.annotations.jpa.JpaSelectIgnoreField;
+import cn.tannn.jdevelops.annotations.jpa.JpaSelectOperator;
+import cn.tannn.jdevelops.annotations.jpa.enums.SQLConnect;
+import cn.tannn.jdevelops.annotations.jpa.enums.SQLOperatorWrapper;
+import cn.tannn.jdevelops.annotations.jpa.enums.SpecBuilderDateFun;
+import cn.tannn.jdevelops.jpa.request.PagingSorteds;
+
+@Schema(description = "资源利用日志分页查询")
+@ToString
+@Getter
+@Setter
+@Valid
+public class ResourceUseLogPage {
+
+    /**
+     * 资源类型（参与自动查询）
+     */
+    @Schema(description = "资源类型")
+    @JpaSelectOperator(operatorWrapper = SQLOperatorWrapper.EQ)
+    private String dataType;
+
+    /**
+     * 关键词（不参与自动查询，在 Specification 中手动处理）
+     */
+    @Schema(description = "关键词")
+    @JpaSelectIgnoreField
+    private String keyword;
+
+    /**
+     * 时间段（不参与自动查询，在 Specification 中手动处理）
+     * 格式：开始时间,结束时间 eg. 2025-04-08 16:09:39,2025-04-09 16:09:39
+     */
+    @Schema(description = "时间段，格式YYYY-MM-DD HH:MM:SS[逗号隔开]，[开始,结束]")
+    @JpaSelectIgnoreField
+    private String operatorTime;
+
+    /**
+     * 分页排序（不参与查询条件）
+     */
+    @Schema(description = "分页排序")
+    @JpaSelectIgnoreField
+    @Valid
+    private PagingSorteds page;
+
+    public PagingSorteds getPage() {
+        if (page == null) {
+            return new PagingSorteds().fixSort(1, "id");
+        }
+        return page;
+    }
+}
+```
+
+**步骤2：继承扩展（可选）**
+
+```java
+// controller/front/dto/ResourceUseLogPage2.java
+@Schema(description = "资源利用日志分页查询(扩展)")
+@ToString
+@Getter
+@Setter
+@Valid
+public class ResourceUseLogPage2 extends ResourceUseLogPage {
+    /**
+     * 资源类型（额外的查询条件）
+     */
+    @JpaSelectIgnoreField
+    @Schema(description = "资源类型 0:资源，1:来源，2:专题")
+    private String resourceType;
+}
+```
+
+**步骤3：创建 Specification 查询类**
+
+```java
+// modules/logs/query/LogSpecQuery.java
+import cn.tannn.jdevelops.annotations.jpa.enums.SpecBuilderDateFun;
+import cn.tannn.jdevelops.jpa.select.EnhanceSpecification;
+import cn.tannn.jdevelops.jpa.utils.JpaUtils;
+import cn.tannn.jdevelops.result.bean.SerializableBean;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.Objects;
+
+/**
+ * 日志查询 Specification 工具类
+ */
+public class LogSpecQuery {
+
+    /**
+     * 用户资源相关日志查询
+     */
+    public static <T extends SerializableBean> Specification<T> logUserResourceSpec(
+            ResourceUseLogPage page, Long userId, Integer status) {
+
+        return EnhanceSpecification.where(e -> {
+            // 模糊查询
+            e.like(StringUtils.isNotBlank(page.getKeyword()),
+                   "dataTitle", "%" + page.getKeyword() + "%");
+
+            // 等值查询
+            e.eq(Objects.nonNull(userId), "userId", userId);
+            e.eq(StringUtils.isNotBlank(page.getDataType()), "dataType", page.getDataType());
+            e.eq(status != null, "status", status);
+
+            // 时间区间查询（带函数处理）
+            String operateTime = page.getOperatorTime();
+            if (StringUtils.isNotBlank(operateTime)) {
+                String[] split = operateTime.split(",");
+                if (split.length >= 2) {
+                    // 大于等于开始时间
+                    if (StringUtils.isNotBlank(split[0])) {
+                        e.ge(JpaUtils.functionTimeFormat(
+                                SpecBuilderDateFun.DATE_FORMAT_DATE,
+                                e.getRoot(),
+                                e.getBuilder(),
+                                "operatorTime"), split[0]);
+                    }
+                    // 小于等于结束时间
+                    if (StringUtils.isNotBlank(split[1])) {
+                        e.le(JpaUtils.functionTimeFormat(
+                                SpecBuilderDateFun.DATE_FORMAT_DATE,
+                                e.getRoot(),
+                                e.getBuilder(),
+                                "operatorTime"), split[1]);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * 用户收藏资源日志查询
+     */
+    public static <T extends SerializableBean> Specification<T> logUserFavoriteResourceSpec(
+            ResourceUseLogPage2 page, Long userId) {
+
+        return EnhanceSpecification.where(e -> {
+            e.like(StringUtils.isNotBlank(page.getKeyword()),
+                   "dataTitle", "%" + page.getKeyword() + "%");
+            e.eq(Objects.nonNull(userId), "userId", userId);
+            e.eq(StringUtils.isNotBlank(page.getDataType()), "dataType", page.getDataType());
+            e.eq(Objects.nonNull(page.getResourceType()), "resourceType", page.getResourceType());
+            e.eq(true, "status", "1");
+
+            // ... 其他查询条件
+        });
+    }
+}
+```
+
+**EnhanceSpecification 常用方法**：
+
+```java
+// 等值查询
+e.eq(condition, "fieldName", value);
+
+// 不等于
+e.ne(condition, "fieldName", value);
+
+// 模糊查询
+e.like(condition, "fieldName", "%keyword%");
+
+// 大于
+e.gt(condition, "fieldName", value);
+
+// 大于等于
+e.ge(condition, "fieldName", value);
+
+// 小于
+e.lt(condition, "fieldName", value);
+
+// 小于等于
+e.le(condition, "fieldName", value);
+
+// IN 查询
+e.in(condition, "fieldName", valueList);
+
+// IS NULL
+e.isNull(condition, "fieldName");
+
+// IS NOT NULL
+e.isNotNull(condition, "fieldName");
+
+// BETWEEN
+e.between(condition, "fieldName", start, end);
+
+// 自定义 Predicate
+e.and(customPredicate);
+e.or(customPredicate);
+```
+
+#### 两种模式对比
+
+| 特性 | 模式1（注解自动查询） | 模式2（手动 Specification） |
+|-----|---------------------|---------------------------|
+| **适用场景** | 简单的等值、区间查询 | 复杂动态查询、多条件组合 |
+| **实现方式** | `@JpaSelectOperator` 注解 | `@JpaSelectIgnoreField` + Query类 |
+| **灵活性** | 低，仅支持标准操作符 | 高，可自由组合各种条件 |
+| **代码量** | 少，仅需注解 | 多，需要单独的 Query 类 |
+| **函数支持** | 有限（如 DATE_FORMAT） | 完全支持 JPA 函数 |
+| **动态条件** | 支持（通过条件判断） | 完全支持（通过 EnhanceSpecification） |
+| **维护性** | 高，声明式 | 中，命令式 |
+| **Controller 调用** | `service.findPage(page, page.getPage())` | `service.findPage(spec, page.getPage())` |
+
+#### 模式选择建议
+
+```
+需要分页查询？
+  ├─ 查询条件简单（仅等值、区间）？
+  │   └─ 是 → 使用模式1（@JpaSelectOperator）
+  └─ 查询条件复杂（函数、动态组合）？
+      └─ 是 → 使用模式2（Specification）
 ```
 
 ### 条件查询请求类

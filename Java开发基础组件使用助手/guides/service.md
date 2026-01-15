@@ -70,8 +70,15 @@ Optional<Customer> findOne(String field, Object value, SQLOperator operator);
 // 条件查询列表
 List<Customer> findList(String field, Object value, SQLOperator operator);
 
-// 分页查询
-Page<Customer> findPage(PageQuery query, Pageable pageable);
+// 分页查询（两种模式）
+
+// 模式1：使用 @JpaSelectOperator 注解（自动查询）
+// 传入包含注解的分页请求对象
+Page<Customer> findPage(LogEsInitDataPage page, Pageable pageable);
+
+// 模式2：使用自定义 Specification（手动查询）
+// 传入 Specification 查询条件
+Page<Customer> findPage(Specification<Customer> spec, Pageable pageable);
 
 // 查询所有
 List<Customer> findAll();
@@ -142,7 +149,50 @@ public List<Customer> findActiveCustomers() {
     // 使用 DAO 进行复杂查询
     return customerDao.findByStatusAndDeletedFalse(1);
 }
+```
 
+### 分页查询（两种模式）
+
+#### 模式1：使用 @JpaSelectOperator 注解（自动查询）
+
+```java
+/**
+ * 分页查询日志（使用注解自动构建查询条件）
+ * @param page 包含 @JpaSelectOperator 注解的分页请求对象
+ * @return 分页结果
+ */
+@Override
+public Page<LogEsInitData> queryPage(LogEsInitDataPage page) {
+    // 直接传入 page 对象，框架根据注解自动构建查询
+    return findPage(page, page.getPage());
+}
+```
+
+#### 模式2：使用自定义 Specification（手动查询）
+
+```java
+/**
+ * 分页查询资源日志（使用自定义 Specification）
+ * @param page 分页请求对象
+ * @param userId 用户ID
+ * @param status 状态
+ * @return 分页结果
+ */
+@Override
+public Page<ResourceUseLog> queryPage(ResourceUseLogPage page, Long userId, Integer status) {
+    // 使用 Specification 构建复杂查询条件
+    Specification<ResourceUseLog> spec = LogSpecQuery.logUserResourceSpec(page, userId, status);
+    return findPage(spec, page.getPage());
+}
+```
+
+**两种模式的选择**：
+- **模式1**：查询条件简单（等值、模糊、区间等），使用 `@JpaSelectOperator` 注解
+- **模式2**：查询条件复杂（需要函数处理、多表关联、动态组合），使用 `Specification`
+
+### 使用 DAO 的复杂查询
+
+```java
 @Override
 public Page<Customer> searchCustomers(String keyword, Pageable pageable) {
     return customerDao.findByLoginNameContainingOrUserNameContaining(

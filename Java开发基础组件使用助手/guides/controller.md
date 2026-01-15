@@ -221,16 +221,55 @@ public ResultVO<String> delete(@RequestParam Long id) {
 
 #### 分页查询
 
+分页查询有两种实现模式，对应两种不同的 Service 调用方式。
+
+**模式1：使用 @JpaSelectOperator 注解（自动查询）**
+
 ```java
 @PostMapping("page")
-@Operation(summary = "分页查询用户")
-public ResultPageVO<Customer, JpaPageResult<Customer>> page(
-    @RequestBody @Valid UserPage page) {
-    Page<Customer> result = customerService.findPage(page, page.getPage());
-    JpaPageResult<Customer> pageResult = JpaPageResult.toPage(result, Customer.class);
-    // 返回分页数据和消息
+@Operation(summary = "分页查询")
+public ResultPageVO<LogEsInitData, JpaPageResult<LogEsInitData>> page(
+    @RequestBody @Valid LogEsInitDataPage page) {
+    // 直接传入 page 对象，框架根据 @JpaSelectOperator 注解自动构建查询
+    Page<LogEsInitData> result = logEsInitDataService.findPage(page, page.getPage());
+    JpaPageResult<LogEsInitData> pageResult = JpaPageResult.toPage(result);
     return ResultPageVO.success(pageResult, "查询成功");
 }
+```
+
+**模式2：使用自定义 Specification（手动查询）**
+
+```java
+@PostMapping("page")
+@Operation(summary = "分页查询资源日志")
+public ResultPageVO<ResourceUseLog, JpaPageResult<ResourceUseLog>> page(
+    @RequestBody @Valid ResourceUseLogPage page,
+    HttpServletRequest request) {
+    // 获取当前用户ID（从请求中获取）
+    Long userId = getUserId(request);
+
+    // 手动构建查询条件
+    Specification<ResourceUseLog> spec = LogSpecQuery.logUserResourceSpec(page, userId, 1);
+
+    // 传入 Specification 和分页参数
+    Page<ResourceUseLog> result = resourceUseLogService.findPage(spec, page.getPage());
+    JpaPageResult<ResourceUseLog> pageResult = JpaPageResult.toPage(result);
+    return ResultPageVO.success(pageResult, "查询成功");
+}
+```
+
+**两种模式的选择**：
+- **模式1**：查询条件简单（等值、区间等标准条件），使用注解自动构建
+- **模式2**：查询条件复杂（需要函数处理、动态组合），手动构建 Specification
+
+**JpaPageResult 转换**：
+
+```java
+// 基本转换（不指定类型）
+JpaPageResult<Customer> pageResult = JpaPageResult.toPage(result);
+
+// 指定类型转换（推荐，类型安全）
+JpaPageResult<Customer> pageResult = JpaPageResult.toPage(result, Customer.class);
 ```
 
 #### 列表查询
