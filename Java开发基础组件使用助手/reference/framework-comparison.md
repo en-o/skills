@@ -398,6 +398,15 @@ JDevelops 框架？
 
 ### 通用流程（两种模式都适用）
 
+**包结构选择**：
+- 无论使用哪种框架模式，都必须在需求确认后询问用户选择包结构
+- 详细流程参考：[../workflows/requirement-analysis.md - 步骤 3.5](../workflows/requirement-analysis.md#步骤-35-包结构选择重要)
+- 详细包结构说明：[./package-structure.md](./package-structure.md)
+- 三种选项：
+  - A：传统三层架构（< 50 个实体）
+  - B：垂直切分（50-100 个实体）
+  - C：标准目录结构（> 100 个实体）
+
 **Entity 字段设计确认**：
 - 无论使用哪种模式，都必须在制定开发计划前对每个 Entity 进行字段设计确认
 - 详细流程参考：[../workflows/requirement-analysis.md - 步骤 6.5](../workflows/requirement-analysis.md#步骤-65-entity-字段设计确认重要)

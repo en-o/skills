@@ -427,6 +427,12 @@ cat pom.xml
 
 #### 2. 包结构选择
 
+**⚠️ 如果是首次添加业务模块，必须询问包结构偏好**
+
+参考详细文档：[../reference/package-structure.md](../reference/package-structure.md)
+
+**同时参考需求分析流程中的包结构选择步骤**：[./requirement-analysis.md - 步骤 3.5](./requirement-analysis.md#步骤-35-包结构选择重要)
+
 如果是首次添加业务模块，需要询问包结构偏好：
 - **询问**: 请选择您希望使用的包结构
 - **选项**:
