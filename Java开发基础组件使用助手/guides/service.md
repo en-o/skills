@@ -61,65 +61,106 @@ public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Lo
 ### 查询方法
 
 ```java
-// 根据ID查询
-Optional<Customer> findById(Long id);
+// 查询单个（等值条件）
+Optional<Customer> findOnly(String fieldName, Object value);
 
-// 条件查询单个
-Optional<Customer> findOne(String field, Object value, SQLOperator operator);
+// 查询单个（两个等值条件）
+Optional<Customer> findOnly(String fieldName, Object value, String fieldName2, Object value2);
 
-// 条件查询列表
-List<Customer> findList(String field, Object value, SQLOperator operator);
-
-// 分页查询（两种模式）
-
-// 模式1：使用 @JpaSelectOperator 注解（自动查询）
-// 传入包含注解的分页请求对象
-Page<Customer> findPage(LogEsInitDataPage page, Pageable pageable);
-
-// 模式2：使用自定义 Specification（手动查询）
-// 传入 Specification 查询条件
-Page<Customer> findPage(Specification<Customer> spec, Pageable pageable);
+// 查询单个（自定义条件）
+Optional<Customer> findOnly(Specification<Customer> spec);
 
 // 查询所有
-List<Customer> findAll();
+List<Customer> finds();
+
+// 查询所有（带排序）
+List<Customer> finds(Sorteds sort);
+
+// 条件查询列表
+List<Customer> finds(String fieldName, SQLOperator operator, Object... value);
+
+// 条件查询列表（带排序）
+List<Customer> finds(String fieldName, SQLOperator operator, Sorteds sort, Object... value);
+
+// 自定义条件查询列表（带排序）
+List<Customer> finds(Specification<Customer> spec, Sorteds sort);
+
+// 异体Entity查询（使用注解）
+<T> List<Customer> finds(T req);
+
+// 异体Entity查询（使用注解，带排序）
+<T> List<Customer> finds(T req, Sorteds sort);
+
+// 分页查询（无条件）
+Page<Customer> findPage(Pagings pageable);
+Page<Customer> findPage(PagingSorteds pageable);
+
+// 分页查询（使用注解）
+<T> Page<Customer> findPage(T req, Pagings pageable);
+<T> Page<Customer> findPage(T req, PagingSorteds pageable);
+<T> Page<Customer> findPage(T req, Pagings pageable, Sorteds sort);
+
+// 分页查询（自定义条件）
+Page<Customer> findPage(Specification<Customer> spec, Pageable pageable);
+
+// FluentQuery 查询（灵活查询）
+<S extends Customer, C> C findBy(Specification<Customer> spec,
+    Function<FluentQuery.FetchableFluentQuery<S>, C> queryFunction);
 ```
 
 ### 保存方法
 
 ```java
 // 保存单个
-Customer save(Customer entity);
+Customer saveOne(Customer entity);
 
 // 批量保存
-List<Customer> saveAll(List<Customer> entities);
+List<Customer> saves(List<Customer> entities);
+
+// 通过 VO 保存（自动转换为 Entity）
+<V> Customer saveOneByVo(V bean);
 ```
 
 ### 更新方法
 
 ```java
 // 更新（根据指定字段匹配）
-void update(Customer entity, SQLOperator operator, String... fields);
+<T> Boolean update(T bean, SQLOperator operator, String... uniqueKey);
 
-// 示例
+// 示例：根据 id 更新
 customerService.update(customer, SQLOperator.EQ, "id");
 ```
 
 ### 删除方法
 
 ```java
-// 根据ID删除
-void deleteById(Long id);
+// 等值删除
+int deleteEq(String fieldName, Object value);
 
-// 批量删除
-void deleteAllById(List<Long> ids);
+// 条件删除
+int delete(String fieldName, SQLOperator operator, Object... value);
+
+// 自定义条件删除
+int delete(Specification<Customer> spec);
+
+// 使用注解删除
+<T> int delete(T wheres);
 ```
 
-### 判断方法
+### 其他方法
 
 ```java
-// 判断是否存在
-boolean existsById(Long id);
+// 获取 DAO
+<ID, R extends JpaBasicsRepository<Customer, ID>> R getJpaBasicsDao();
+
+// 获取 EntityManager
+EntityManager getEntityManager();
 ```
+
+**重要说明**：
+- 所有这些方法都可以直接在 Controller 中通过注入的 Service 调用
+- 例如：`customerService.findOnly("loginName", "zhangsan")`
+- 这些方法内部都是通过 DAO 实现的，框架已经封装好了
 
 查看完整 API：https://github.com/en-o/Jdevelops
 
@@ -127,75 +168,116 @@ boolean existsById(Long id);
 
 ## 自定义方法示例
 
-### 简单查询
+### 直接使用继承的方法
+
+**在 Controller 中直接调用**（推荐）：
 
 ```java
-@Override
-public Optional<Customer> findByLoginName(String loginName) {
-    return findOne("loginName", loginName, SQLOperator.EQ);
-}
+@PathRestController("user")
+public class CustomerController {
+    private final CustomerService customerService;
 
-@Override
-public List<Customer> findByStatus(Integer status) {
-    return findList("status", status, SQLOperator.EQ);
+    @GetMapping("detail")
+    public ResultVO<Customer> detail(@RequestParam String loginName) {
+        // 直接调用 Service 继承的方法
+        Optional<Customer> customer = customerService.findOnly("loginName", loginName);
+        return ResultVO.success(customer.orElse(null));
+    }
+
+    @GetMapping("list")
+    public ResultVO<List<Customer>> list(@RequestParam Integer status) {
+        // 直接调用 Service 继承的方法
+        List<Customer> customers = customerService.finds("status", SQLOperator.EQ, status);
+        return ResultVO.success(customers);
+    }
 }
 ```
 
-### 复杂查询
+### 需要自定义业务逻辑时
+
+当需要添加业务逻辑时，在 ServiceImpl 中实现。
+
+#### 方式1：使用继承的方法
 
 ```java
-@Override
-public List<Customer> findActiveCustomers() {
-    // 使用 DAO 进行复杂查询
-    return customerDao.findByStatusAndDeletedFalse(1);
+// Service 接口
+public interface CustomerService extends J2Service<Customer> {
+    Optional<Customer> findByLoginName(String loginName);
+}
+
+// ServiceImpl 实现
+@Service
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
+    implements CustomerService {
+
+    public CustomerServiceImpl() {
+        super(Customer.class);
+    }
+
+    @Override
+    public Optional<Customer> findByLoginName(String loginName) {
+        // 调用继承的方法
+        return this.findOnly("loginName", loginName);
+    }
 }
 ```
 
-### 分页查询（两种模式）
+#### 方式2：通过 DAO 实现（推荐）
 
-#### 模式1：使用 @JpaSelectOperator 注解（自动查询）
-
-```java
-/**
- * 分页查询日志（使用注解自动构建查询条件）
- * @param page 包含 @JpaSelectOperator 注解的分页请求对象
- * @return 分页结果
- */
-@Override
-public Page<LogEsInitData> queryPage(LogEsInitDataPage page) {
-    // 直接传入 page 对象，框架根据注解自动构建查询
-    return findPage(page, page.getPage());
-}
-```
-
-#### 模式2：使用自定义 Specification（手动查询）
+**复杂查询应该在 DAO 中定义方法**：
 
 ```java
-/**
- * 分页查询资源日志（使用自定义 Specification）
- * @param page 分页请求对象
- * @param userId 用户ID
- * @param status 状态
- * @return 分页结果
- */
-@Override
-public Page<ResourceUseLog> queryPage(ResourceUseLogPage page, Long userId, Integer status) {
-    // 使用 Specification 构建复杂查询条件
-    Specification<ResourceUseLog> spec = LogSpecQuery.logUserResourceSpec(page, userId, status);
-    return findPage(spec, page.getPage());
+// DAO 接口
+public interface CustomerDao extends JpaRepository<Customer, Long> {
+    // 自定义查询方法（JPA 方法命名规范）
+    Optional<Customer> findByLoginName(String loginName);
+
+    List<Customer> findByStatusAndDeletedFalse(Integer status);
+
+    Page<Customer> findByLoginNameContainingOrUserNameContaining(
+        String loginName, String userName, Pageable pageable);
+
+    // 使用 @Query 注解自定义 SQL
+    @Query("SELECT c FROM Customer c WHERE c.status = :status AND c.deleted = false")
+    List<Customer> findActiveCustomers(@Param("status") Integer status);
+}
+
+// ServiceImpl 实现
+@Service
+public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
+    implements CustomerService {
+
+    public CustomerServiceImpl() {
+        super(Customer.class);
+    }
+
+    @Override
+    public Optional<Customer> findByLoginName(String loginName) {
+        // 通过 getJpaBasicsDao() 获取 DAO
+        return getJpaBasicsDao().findByLoginName(loginName);
+    }
+
+    @Override
+    public List<Customer> findActiveCustomers() {
+        // 调用 DAO 的自定义方法
+        return getJpaBasicsDao().findByStatusAndDeletedFalse(1);
+    }
+
+    @Override
+    public Page<Customer> searchCustomers(String keyword, Pageable pageable) {
+        // 调用 DAO 的复杂查询方法
+        return getJpaBasicsDao().findByLoginNameContainingOrUserNameContaining(
+            keyword, keyword, pageable);
+    }
 }
 ```
-
-**两种模式的选择**：
-- **模式1**：查询条件简单（等值、模糊、区间等），使用 `@JpaSelectOperator` 注解
-- **模式2**：查询条件复杂（需要函数处理、多表关联、动态组合），使用 `Specification`
 
 ### 使用 DAO 的复杂查询
 
 ```java
 @Override
 public Page<Customer> searchCustomers(String keyword, Pageable pageable) {
-    return customerDao.findByLoginNameContainingOrUserNameContaining(
+    return getJpaBasicsDao().findByLoginNameContainingOrUserNameContaining(
         keyword, keyword, pageable);
 }
 ```
@@ -206,8 +288,9 @@ public Page<Customer> searchCustomers(String keyword, Pageable pageable) {
 @Override
 @Transactional(rollbackFor = Exception.class)
 public void registerCustomer(UserAdd add) {
-    // 1. 检查用户名是否存在
-    if (findByLoginName(add.getLoginName()).isPresent()) {
+    // 1. 检查用户名是否存在（调用继承的方法）
+    Optional<Customer> existing = this.findOnly("loginName", add.getLoginName());
+    if (existing.isPresent()) {
         throw new BusinessException("用户名已存在");
     }
 
@@ -218,10 +301,10 @@ public void registerCustomer(UserAdd add) {
     customer.setPassword(PasswordUtil.encode(add.getPassword()));
     customer.setStatus(1);
 
-    // 4. 保存
-    save(customer);
+    // 4. 保存（调用继承的方法）
+    this.saveOne(customer);
 
-    // 5. 其他业务逻辑（如发送邮件）
+    // 5. 其他业务逻辑
     sendWelcomeEmail(customer);
 }
 
@@ -229,6 +312,96 @@ private void sendWelcomeEmail(Customer customer) {
     // 邮件发送逻辑
 }
 ```
+
+### 方法选择建议
+
+| 场景 | 推荐方式 | 说明 |
+|------|---------|------|
+| 简单查询，无业务逻辑 | Controller 直接调用 | `customerService.findOnly()` |
+| 需要添加业务逻辑 | ServiceImpl 中实现 | 可调用继承的方法 |
+| 复杂查询 | DAO 中定义方法 | JPA 方法命名或 @Query |
+| 多表关联查询 | DAO 中使用 @Query | 自定义 JPQL 或 SQL |
+| 需要事务控制 | ServiceImpl 中实现 | 添加 @Transactional |
+
+### 分页查询示例
+
+#### 模式1：使用 @JpaSelectOperator 注解（自动查询）
+
+**在 Controller 中直接调用**（推荐）：
+
+```java
+@PostMapping("page")
+@Operation(summary = "分页查询")
+public ResultPageVO<LogEsInitData, JpaPageResult<LogEsInitData>> page(
+    @RequestBody @Valid LogEsInitDataPage page) {
+    // 直接调用 Service 继承的方法，框架根据注解自动构建查询
+    Page<LogEsInitData> result = logEsInitDataService.findPage(page, page.getPage());
+    JpaPageResult<LogEsInitData> pageResult = JpaPageResult.toPage(result);
+    return ResultPageVO.success(pageResult, "查询成功");
+}
+```
+
+**或在 ServiceImpl 中封装**：
+
+```java
+@Service
+public class LogEsInitDataServiceImpl extends J2ServiceImpl<LogEsInitDataDao, LogEsInitData, Long>
+    implements LogEsInitDataService {
+
+    public LogEsInitDataServiceImpl() {
+        super(LogEsInitData.class);
+    }
+
+    @Override
+    public Page<LogEsInitData> queryPage(LogEsInitDataPage page) {
+        // 调用继承的方法
+        return this.findPage(page, page.getPage());
+    }
+}
+```
+
+#### 模式2：使用自定义 Specification（手动查询）
+
+**在 ServiceImpl 中实现**：
+
+```java
+@Service
+public class ResourceUseLogServiceImpl extends J2ServiceImpl<ResourceUseLogDao, ResourceUseLog, Long>
+    implements ResourceUseLogService {
+
+    public ResourceUseLogServiceImpl() {
+        super(ResourceUseLog.class);
+    }
+
+    @Override
+    public Page<ResourceUseLog> queryPage(ResourceUseLogPage page, Long userId, Integer status) {
+        // 使用 Specification 构建复杂查询条件
+        Specification<ResourceUseLog> spec = LogSpecQuery.logUserResourceSpec(page, userId, status);
+        // 调用继承的方法
+        return this.findPage(spec, page.getPage());
+    }
+}
+```
+
+**在 Controller 中调用**：
+
+```java
+@PostMapping("page")
+@Operation(summary = "分页查询资源日志")
+public ResultPageVO<ResourceUseLog, JpaPageResult<ResourceUseLog>> page(
+    @RequestBody @Valid ResourceUseLogPage page,
+    HttpServletRequest request) {
+    Long userId = getUserId(request);
+    // 调用 Service 的自定义方法
+    Page<ResourceUseLog> result = resourceUseLogService.queryPage(page, userId, 1);
+    JpaPageResult<ResourceUseLog> pageResult = JpaPageResult.toPage(result);
+    return ResultPageVO.success(pageResult, "查询成功");
+}
+```
+
+**两种模式的选择**：
+- **模式1**：查询条件简单（等值、模糊、区间等），直接在 Controller 中调用 `service.findPage(page, page.getPage())`
+- **模式2**：查询条件复杂（需要函数处理、多表关联、动态组合），在 ServiceImpl 中实现并使用 `Specification`
 
 ---
 
