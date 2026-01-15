@@ -1,11 +1,16 @@
 # 新增业务模块工作流
 
+## 🎯 开始之前
+
+**重要**：在开始添加模块前，必须完成需求分析和确认流程。参考 [SKILL.md - 需求分析和确认流程](../SKILL.md#需求分析和确认流程首要步骤)
+
 ## 工作流清单
 
 复制此清单并跟踪进度：
 
 ```
 模块创建进度：
+- [ ] 步骤0：需求分析和确认（首要步骤）
 - [ ] 步骤1：分析需求（确定模块名、功能、字段）
 - [ ] 步骤2：查阅参考资料（确认 API 和包路径）
 - [ ] 步骤3：创建 Entity 类
@@ -14,6 +19,262 @@
 - [ ] 步骤6：创建 Controller 和请求/响应类
 - [ ] 步骤7：验证代码规范
 ```
+
+---
+
+## 步骤0：需求分析和确认（首要步骤）
+
+### ⚠️ 必须首先完成需求分析
+
+**在开始任何代码生成前，必须通过需求分析和确认流程**：
+
+### 需求收集
+
+**引导用户描述需求**：
+- "请详细描述您要添加的模块：功能、字段、业务逻辑等"
+- 鼓励用户提供尽可能多的细节
+
+**示例用户输入**：
+```
+"我需要添加一个商品管理模块，包含：
+1. 商品基本信息管理（名称、分类、价格、库存）
+2. 商品上下架功能
+3. 商品图片管理（支持多图）
+4. 商品规格管理（颜色、尺寸等）
+5. 商品搜索（支持按名称、分类、价格区间搜索）
+6. 库存预警功能"
+```
+
+### 需求总结提炼
+
+根据用户描述，进行结构化总结：
+
+```markdown
+【需求总结】
+
+## 模块概述
+模块名称：商品管理模块（Product）
+业务领域：商品管理
+
+## 核心功能
+1. 商品信息管理
+   - 新增商品
+   - 编辑商品
+   - 删除商品
+   - 查询商品详情
+
+2. 商品状态管理
+   - 商品上架
+   - 商品下架
+   - 状态查询
+
+3. 商品图片管理
+   - 上传商品图片（多图）
+   - 删除图片
+   - 设置主图
+
+4. 商品规格管理
+   - 添加规格（颜色、尺寸）
+   - 规格库存管理
+   - 规格价格管理
+
+5. 商品搜索
+   - 按名称搜索
+   - 按分类筛选
+   - 价格区间筛选
+   - 分页查询
+
+6. 库存预警
+   - 设置预警阈值
+   - 库存不足提醒
+
+## 数据模型设计
+
+### Product（商品表）
+- id: Long（主键）
+- productName: String（商品名称）
+- categoryId: Long（分类ID）
+- price: BigDecimal（价格）
+- stock: Integer（库存）
+- status: Integer（状态：0-下架，1-上架）
+- description: String（描述）
+- mainImage: String（主图）
+- lowStockThreshold: Integer（库存预警阈值）
+- 继承 JpaCommonBean（创建时间、修改时间等）
+
+### ProductImage（商品图片表）
+- id: Long
+- productId: Long（关联商品）
+- imageUrl: String（图片URL）
+- sortOrder: Integer（排序）
+- isMain: Boolean（是否主图）
+
+### ProductSpec（商品规格表）
+- id: Long
+- productId: Long
+- specName: String（规格名：颜色/尺寸）
+- specValue: String（规格值：红色/L）
+- price: BigDecimal（规格价格）
+- stock: Integer（规格库存）
+
+## 接口定义
+
+### ProductController（/product）
+- POST /product/add - 新增商品
+- PUT /product/update - 更新商品
+- DELETE /product/delete/{id} - 删除商品
+- GET /product/detail/{id} - 商品详情
+- GET /product/list - 商品列表（分页）
+- PUT /product/status/{id} - 上下架
+- POST /product/search - 搜索商品（分页）
+- GET /product/low-stock - 库存预警列表
+
+### ProductImageController（/product/image）
+- POST /product/image/upload - 上传图片
+- DELETE /product/image/delete/{id} - 删除图片
+- PUT /product/image/main/{id} - 设置主图
+
+### ProductSpecController（/product/spec）
+- POST /product/spec/add - 添加规格
+- PUT /product/spec/update - 更新规格
+- DELETE /product/spec/delete/{id} - 删除规格
+- GET /product/spec/list/{productId} - 规格列表
+
+## 请求/响应类
+
+### 请求类（dto）
+- ProductAdd（新增商品）
+- ProductEdit（编辑商品）
+- ProductSearch（搜索条件）
+- ProductImageAdd（图片上传）
+- ProductSpecAdd（规格添加）
+
+### 响应类（vo）
+- ProductInfo（商品详情，包含图片和规格）
+- 或直接返回 Product Entity（如不需要脱敏）
+
+## 技术要点
+- 商品图片：需要 jdevelops-files-sdk 组件
+- 搜索功能：使用 @JpaSelectOperator 注解或自定义 Specification
+- 库存预警：可使用定时任务或实时检查
+```
+
+### 确认需求
+
+**询问用户**：
+```
+"以上是我对您需求的总结。请问：
+1. 需求总结是否准确？
+2. 功能点是否完整？
+3. 数据模型设计是否合理？
+4. 是否满意此需求总结？"
+```
+
+### 迭代优化（如果不满意）
+
+**如果用户不满意**：
+```
+用户: "基本满意，但我还需要添加商品评价功能和收藏功能"
+
+AI: "好的，我来更新需求总结：
+
+【需求总结（更新版）】
+... （保留原有内容）
+
+7. 商品评价功能  ← 新增
+   - 用户评价
+   - 评分（1-5星）
+   - 评价列表
+
+8. 商品收藏功能  ← 新增
+   - 添加收藏
+   - 取消收藏
+   - 我的收藏列表
+
+## 数据模型设计（更新）
+新增：
+  - ProductReview（商品评价表）
+    - id, productId, userId, rating, content, createTime
+  - ProductFavorite（商品收藏表）
+    - id, productId, userId, createTime
+
+## 接口定义（更新）
+新增：
+  - POST /product/review/add - 添加评价
+  - GET /product/review/list/{productId} - 评价列表
+  - POST /product/favorite/add - 添加收藏
+  - DELETE /product/favorite/remove/{productId} - 取消收藏
+  - GET /product/favorite/my - 我的收藏
+
+请问现在是否满意？"
+```
+
+**继续询问直到用户满意**。
+
+### 制定开发计划
+
+**需求确认后，制定详细的开发计划**：
+
+```markdown
+【开发计划】
+
+## 阶段 1: 项目准备
+✓ 步骤 1.1: 确认项目路径
+✓ 步骤 1.2: 检查是否需要添加文件上传组件（jdevelops-files-sdk）
+
+## 阶段 2: 核心数据模型
+✓ 步骤 2.1: 创建 Product Entity
+  - 字段：productName, categoryId, price, stock, status...
+  - 继承 JpaCommonBean
+  - 添加注解：@Entity, @Table, @Comment, @Schema
+
+✓ 步骤 2.2: 创建 ProductDao 接口
+  - 继承 JpaRepository<Product, Long>
+  - 自定义查询方法（如需要）
+
+✓ 步骤 2.3: 创建 ProductService 和实现
+  - 继承 J2Service<Product>
+  - 实现基础 CRUD
+  - 实现业务方法（上下架、库存预警）
+
+## 阶段 3: 关联数据模型
+✓ 步骤 3.1: 创建 ProductImage Entity + Dao + Service
+✓ 步骤 3.2: 创建 ProductSpec Entity + Dao + Service
+✓ 步骤 3.3: 创建 ProductReview Entity + Dao + Service
+✓ 步骤 3.4: 创建 ProductFavorite Entity + Dao + Service
+
+## 阶段 4: 请求/响应类
+✓ 步骤 4.1: 创建请求类（dto）
+  - ProductAdd, ProductEdit, ProductSearch
+  - ProductImageAdd, ProductSpecAdd
+  - ProductReviewAdd
+
+✓ 步骤 4.2: 创建响应类（vo，如需要）
+  - ProductInfo（包含图片、规格、评价统计）
+
+## 阶段 5: Controller 接口
+✓ 步骤 5.1: 创建 ProductController
+  - 基础 CRUD 接口
+  - 搜索接口
+  - 上下架接口
+  - 库存预警接口
+
+✓ 步骤 5.2: 创建 ProductImageController
+✓ 步骤 5.3: 创建 ProductSpecController
+✓ 步骤 5.4: 创建 ProductReviewController
+✓ 步骤 5.5: 创建 ProductFavoriteController
+
+## 阶段 6: 验证
+✓ 步骤 6.1: 验证代码规范
+✓ 步骤 6.2: 测试基础功能
+✓ 步骤 6.3: 验证 API 文档
+
+确认开始执行？
+```
+
+### 获得确认后开始执行
+
+用户确认后，进入步骤1开始执行。
 
 ---
 
