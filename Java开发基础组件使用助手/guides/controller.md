@@ -513,6 +513,464 @@ public ResultVO<String> updatePassword(
 
 ---
 
+## 登录管理示例
+
+JDevelops 框架提供了两种登录方式：纯JWT登录和Redis+JWT登录。
+
+### 方式1：纯JWT登录（无状态）
+
+**适用场景**：小型应用、无需管理在线用户、不需要强制退出功能
+
+**核心依赖**：`jdevelops-jwt-standalone`
+
+**特点**：
+- JWT完全无状态，服务端不存储token
+- 无法实现强制退出（token在有效期内始终有效）
+- 性能高，不依赖Redis
+
+```java
+@PathRestController("")
+@Tag(name = "登录管理")
+@RequiredArgsConstructor
+@Slf4j
+public class LoginController {
+
+    private final UserInfoService userInfoService;
+    private final LoginService loginService;  // JWT登录服务
+
+    /**
+     * 账户密码登录
+     */
+    @Operation(summary = "账户密码登录")
+    @ApiMapping(value = "/login", checkToken = false, method = RequestMethod.POST)
+    public ResultVO<LoginVO> login(
+        @RequestBody @Valid LoginPassword login,
+        HttpServletRequest request) throws IllegalAccessException {
+
+        log.info("登录请求，登录名：{}", login.getLoginName());
+
+        // 1. 验证用户名密码
+        UserInfo userInfo = userInfoService.authenticateUser(login);
+
+        // 2. 生成JWT token
+        String token = loginUserSign(userInfo, request);
+
+        return ResultVO.success("登录成功", new LoginVO(token));
+    }
+
+    /**
+     * 退出（纯JWT无实际操作）
+     */
+    @Operation(summary = "退出")
+    @GetMapping("/logout")
+    public ResultVO<String> logout(HttpServletRequest request) {
+        // 纯JWT模式下，退出只是客户端删除token
+        // 服务端无法使token失效（除非维护黑名单）
+        return ResultVO.successMessage("成功退出");
+    }
+
+    /**
+     * 解析当前登录用户的token
+     */
+    @Operation(summary = "解析当前登录者的token")
+    @ApiMapping(value = "parse")
+    public ResultVO<SignEntity<String>> parseToken(HttpServletRequest request) {
+        return ResultVO.success(JwtWebUtil.getTokenBySignEntity(request));
+    }
+
+    /**
+     * 构造登录信息并生成token
+     */
+    private String loginUserSign(UserInfo account, HttpServletRequest request) {
+        // 初始化签名实体
+        SignEntity<LoginJwtExtendInfo<String>> init = SignEntity.init(account.getLoginName());
+
+        // 设置扩展信息
+        LoginJwtExtendInfo<String> extendInfo = new LoginJwtExtendInfo<>();
+        extendInfo.setUserId(account.getId() + "");
+        extendInfo.setUserNo(account.getId() + "");
+        extendInfo.setUserName(account.getLoginName());
+        extendInfo.setLoginName(account.getLoginName());
+        init.setMap(extendInfo);
+
+        // 生成token
+        return loginService.login(init).getSign();
+    }
+}
+```
+
+### 方式2：Redis+JWT登录（有状态）
+
+**适用场景**：中大型应用、需要管理在线用户、需要强制退出、防重复登录
+
+**核心依赖**：`jdevelops-authentications-rjwt`
+
+**特点**：
+- JWT token存储在Redis中，支持管理和控制
+- 可以实现强制退出、踢人下线、防重复登录
+- 支持登录限制（错误次数限制）
+- 支持验证码功能
+- 支持登录日志记录
+- 支持多平台登录控制
+
+```java
+@PathRestController
+@Tag(name = "登录管理", extensions = {
+    @Extension(properties = {
+        @ExtensionProperty(name = "x-order", value = "1", parseValue = true)
+    })
+})
+@RequiredArgsConstructor
+@Slf4j
+public class LoginController {
+
+    private final RedisLoginService redisLoginService;  // Redis登录服务
+    private final AccountService accountService;
+    private final RoleAccountService roleAccountService;
+    private final LoginLimitService loginLimitService;  // 登录限制服务
+    private final AccountLoginPlatformService accountLoginPlatformService;
+    private final CaptchaService captchaService;  // 验证码服务
+    private final SysConfigService sysConfigService;
+
+    /**
+     * 管理端登录
+     */
+    @Operation(summary = "账户密码登录-admin")
+    @ApiMapping(value = "/login", checkToken = false, method = RequestMethod.POST)
+    @LoginLog(type = LoginType.ADMIN_ACCOUNT_PASSWORD)  // 记录登录日志
+    public ResultVO<LoginVO> login(
+        @RequestBody @Valid LoginPasswordCaptcha login,
+        HttpServletRequest request) throws IllegalAccessException {
+
+        // 1. 验证登录次数限制
+        loginLimitService.verify(login.getLoginName(), false);
+
+        // 2. 验证图形验证码（根据配置决定是否需要）
+        SysLoginCaptcha captcha = sysConfigService.findCaptchaSetting_bean(PlatformType.ADMIN);
+        if (captcha.green(login.getCaptcha())) {
+            captchaService.verifyCaptcha(login.getCaptcha(), request);
+        }
+
+        try {
+            // 3. 验证用户名密码
+            List<String> platforms = Collections.singletonList(PlatformConstant.WEB_ADMIN);
+            Account account = accountService.authenticateUser(platforms, login);
+
+            // 4. 验证平台登录权限
+            boolean isPlatformLogin = accountLoginPlatformService.isLoginPlatform(
+                PlatformType.ADMIN, account.getId() + "");
+            if (!isPlatformLogin) {
+                throw new UserException(405, "无登录管理后台权限");
+            }
+
+            // 5. 生成token
+            String token = loginUserSign(account, request, platforms, true);
+
+            return ResultVO.success("登录成功",
+                new LoginVO(token, account.verifyForcePasswordChange2()));
+        } catch (Exception e) {
+            // 6. 记录登录失败次数
+            loginLimitService.limit(login.getLoginName());
+            throw e;
+        }
+    }
+
+    /**
+     * 前台用户登录
+     */
+    @Operation(summary = "账户密码登录-利用端登录")
+    @ApiMapping(value = "/login/web", checkToken = false, method = RequestMethod.POST)
+    @LoginLog(type = LoginType.ADMIN_ACCOUNT_PASSWORD, platform = PlatformConstant.WEB_H5)
+    public ResultVO<LoginVO> loginWeb(
+        @RequestBody @Valid LoginPasswordCaptcha login,
+        HttpServletRequest request) throws IllegalAccessException {
+
+        loginLimitService.verify(login.getLoginName(), false);
+
+        SysLoginCaptcha captcha = sysConfigService.findCaptchaSetting_bean(PlatformType.PC);
+        if (captcha.green(login.getCaptcha())) {
+            captchaService.verifyCaptcha(login.getCaptcha(), request);
+        }
+
+        try {
+            List<String> platforms = Collections.singletonList(PlatformConstant.WEB_PC);
+            Account account = accountService.authenticateUser(platforms, login);
+
+            boolean isPlatformLogin = accountLoginPlatformService.isLoginPlatform(
+                PlatformType.PC, account.getId() + "");
+            if (!isPlatformLogin) {
+                throw new UserException(405, "无登录权限,请联系管理员");
+            }
+
+            String token = loginUserSign(account, request, platforms, true);
+            return ResultVO.success("登录成功", new LoginVO(token));
+        } catch (Exception e) {
+            loginLimitService.limit(login.getLoginName());
+            throw e;
+        }
+    }
+
+    /**
+     * 游客登录
+     */
+    @Operation(summary = "利用端-游客登录")
+    @ApiMapping(value = "/login/web/guest", checkToken = false, method = RequestMethod.POST)
+    public ResultVO<LoginVO> loginGuest(HttpServletRequest request) {
+        try {
+            List<String> platforms = Collections.singletonList(PlatformConstant.WEB_PC);
+
+            // 构造游客账号
+            Account account = new Account();
+            account.setId(0L);
+            account.setLoginName(DefAccountLoginName.GUEST);
+            account.setName("游客");
+            account.setNickname("游客");
+            account.setStatus(1);
+            account.setType(0);
+            account.setAvailable(2);
+            account.setForcePasswordChange(false);
+
+            String token = loginUserSign(account, request, platforms, false);
+            return ResultVO.success("登录成功", new LoginVO(token));
+        } catch (Exception e) {
+            log.error("游客登录失败，错误消息{}", e.getMessage(), e);
+            throw new BusinessException("登录失败！" + e.getMessage());
+        }
+    }
+
+    /**
+     * 退出（清除Redis中的token）
+     */
+    @Operation(summary = "退出")
+    @GetMapping("/logout")
+    public ResultVO<String> logout(HttpServletRequest request) {
+        // Redis模式下，退出会清除Redis中的token，使其立即失效
+        redisLoginService.loginOut(request);
+        return ResultVO.successMessage("成功退出");
+    }
+
+    /**
+     * 解析当前登录用户的token
+     */
+    @Operation(summary = "解析当前登录者的token")
+    @ApiMapping(value = "parse")
+    public ResultVO<SignEntity<String>> parseToken(HttpServletRequest request) {
+        return ResultVO.success(JwtWebUtil.getTokenBySignEntity(request));
+    }
+
+    /**
+     * 获取图形验证码
+     */
+    @Operation(summary = "获取图形验证码", description = "默认是PC的,data为空表示不需要验证码")
+    @ApiMapping(value = "/captcha", checkToken = false, method = RequestMethod.GET)
+    public ResultVO<CaptchaVO> imageShearCaptcha(
+        @RequestParam(value = "platform", required = false) PlatformType platform,
+        HttpServletRequest request) {
+
+        if (platform == null) {
+            platform = PlatformType.PC;
+        }
+
+        SysLoginCaptcha captcha = sysConfigService.findCaptchaSetting_bean(platform);
+        if (!captcha.getOpen()) {
+            return ResultVO.success(null);
+        }
+
+        CaptchaVO captchaVO = switchCaptcha(captcha, request);
+
+        // 生产环境不返回答案
+        if (!"mock".equals(profile)) {
+            captchaVO.setCaptcha("你猜");
+        }
+
+        return ResultVO.success(captchaVO);
+    }
+
+    /**
+     * 构造登录信息并生成token（Redis模式）
+     */
+    private String loginUserSign(Account account, HttpServletRequest request,
+                                 List<String> platform, boolean log) {
+        // 构造Redis签名实体
+        RedisSignEntity<LoginJwtExtendInfo> redisSignEntity = new RedisSignEntity<>(
+            account.getLoginName(),
+            platform,
+            false,  // 不允许多端登录
+            false,  // 不强制下线旧token
+            new StorageUserState(
+                account.getLoginName(),
+                account.getStatus(),
+                account.getErrorMessage())
+        );
+
+        // 设置角色信息
+        List<String> userRole = roleAccountService.getRoleCodeByUserId(account.getId());
+        redisSignEntity.setUserRole(
+            new StorageUserRole(
+                account.getLoginName(),
+                userRole,
+                Collections.emptyList()));
+
+        // 设置扩展信息
+        LoginJwtExtendInfo<String> jwtExtendInfo = new LoginJwtExtendInfo<>();
+        jwtExtendInfo.setUserId(account.getId() + "");
+        jwtExtendInfo.setUserName(account.getName());
+        jwtExtendInfo.setLoginName(account.getLoginName());
+        redisSignEntity.setMap(jwtExtendInfo);
+
+        // 生成token（存储到Redis）
+        TokenSign login = redisLoginService.login(redisSignEntity);
+
+        if (log) {
+            LoginContextHolder.getContext()
+                .setDescription(login.getDescription())
+                .setToken(login.getSign(), false);
+        }
+
+        return login.getSign();
+    }
+}
+```
+
+### 登录请求类
+
+```java
+// 纯JWT登录请求类
+@Getter
+@Setter
+@ToString
+public class LoginPassword {
+    @NotBlank(message = "登录名不能为空")
+    @Schema(description = "登录名")
+    private String loginName;
+
+    @NotBlank(message = "密码不能为空")
+    @Schema(description = "密码")
+    private String password;
+}
+
+// Redis+JWT登录请求类（带验证码）
+@Getter
+@Setter
+@ToString
+public class LoginPasswordCaptcha extends LoginPassword {
+    @Schema(description = "验证码")
+    private String captcha;
+}
+```
+
+### 登录响应类
+
+```java
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoginVO {
+    @Schema(description = "JWT Token")
+    private String token;
+
+    @Schema(description = "是否需要强制修改密码")
+    private Boolean forcePasswordChange;
+
+    public LoginVO(String token) {
+        this.token = token;
+    }
+}
+```
+
+### 两种方式对比
+
+| 特性 | 纯JWT登录 | Redis+JWT登录 |
+|-----|----------|--------------|
+| **依赖** | `jdevelops-jwt-standalone` | `jdevelops-authentications-rjwt` |
+| **存储** | 无状态，不存储token | token存储在Redis |
+| **强制退出** | ❌ 不支持 | ✅ 支持 |
+| **踢人下线** | ❌ 不支持 | ✅ 支持 |
+| **防重复登录** | ❌ 不支持 | ✅ 支持 |
+| **登录限制** | ❌ 需自行实现 | ✅ 内置支持 |
+| **验证码** | ❌ 需自行实现 | ✅ 内置支持 |
+| **登录日志** | ❌ 需自行实现 | ✅ 内置支持 |
+| **性能** | ⚡ 高（无IO操作） | 💾 依赖Redis性能 |
+| **适用场景** | 小型应用、API网关 | 中大型应用、管理后台 |
+
+### Service 层实现（用户认证）
+
+```java
+@Service
+public class AccountServiceImpl extends J2ServiceImpl<AccountDao, Account, Long>
+    implements AccountService {
+
+    public AccountServiceImpl() {
+        super(Account.class);
+    }
+
+    @Override
+    public Account authenticateUser(List<String> platforms, LoginPassword login) {
+        // 1. 查询用户
+        Optional<Account> accountOpt = this.findOnly("loginName", login.getLoginName());
+        if (accountOpt.isEmpty()) {
+            throw new UserException(404, "用户不存在");
+        }
+
+        Account account = accountOpt.get();
+
+        // 2. 验证密码
+        if (!PasswordUtil.matches(login.getPassword(), account.getPassword())) {
+            throw new UserException(401, "密码错误");
+        }
+
+        // 3. 验证账号状态
+        if (account.getStatus() != 1) {
+            throw new UserException(403, "账号已被禁用");
+        }
+
+        // 4. 验证平台权限（Redis模式）
+        if (platforms != null && !platforms.isEmpty()) {
+            boolean hasPermission = accountLoginPlatformService.hasPermission(
+                account.getId(), platforms);
+            if (!hasPermission) {
+                throw new UserException(405, "无访问该平台的权限");
+            }
+        }
+
+        return account;
+    }
+}
+```
+
+### 获取当前登录用户信息
+
+```java
+@PathRestController("user")
+@Tag(name = "用户管理")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final AccountService accountService;
+
+    /**
+     * 获取当前登录用户信息
+     */
+    @GetMapping("current")
+    @Operation(summary = "获取当前登录用户信息")
+    public ResultVO<Account> getCurrentUser(HttpServletRequest request) {
+        // 从token中获取用户ID
+        SignEntity<String> signEntity = JwtWebUtil.getTokenBySignEntity(request);
+        String userId = signEntity.getMap();
+
+        // 查询用户信息
+        Account account = accountService.findOnly("id", Long.parseLong(userId))
+            .orElseThrow(() -> new UserException(404, "用户不存在"));
+
+        return ResultVO.success(account);
+    }
+}
+```
+
+---
+
 ## 参考资源
 
 - 注解规范：[../standards/annotations.md](../standards/annotations.md)
