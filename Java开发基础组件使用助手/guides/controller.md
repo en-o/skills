@@ -10,23 +10,21 @@ Controller 使用 `@PathRestController` 注解，统一返回 `ResultVO` 或 `Re
 
 ```java
 
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import cn.tannn.jdevelops.annotations.web.mapping.PathRestController;
+import cn.tannn.jdevelops.result.response.ResultVO;
+import cn.tannn.jdevelops.result.response.ResultPageVO;
+import cn.tannn.jdevelops.jpa.result.JpaPageResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 @PathRestController("user")
 @Tag(name = "用户管理", extensions = {
@@ -48,19 +46,27 @@ public class CustomerController {
         return ResultVO.successMessage("新增成功");
     }
 
-    @PostMapping("edit")
-    @Operation(summary = "编辑用户")
-    public ResultVO<String> edit(@RequestBody @Valid UserEdit edit) {
+    @PutMapping("update")
+    @Operation(summary = "更新用户")
+    public ResultVO<String> update(@RequestBody @Valid UserEdit edit) {
         customerService.updateCustomer(edit);
-        return ResultVO.successMessage("编辑成功");
+        return ResultVO.successMessage("更新成功");
     }
 
-    @GetMapping("detail")
+    @GetMapping("detail/{id}")
     @Operation(summary = "用户详情")
     @Parameter(name = "id", description = "用户ID", required = true)
-    public ResultVO<Customer> detail(@RequestParam Long id) {
-        Customer customer = customerService.findById(id).orElseThrow();
+    public ResultVO<Customer> detail(@PathVariable Long id) {
+        Customer customer = customerService.findOnly("id", id).orElseThrow();
         return ResultVO.success(customer);
+    }
+
+    @DeleteMapping("delete/{id}")
+    @Operation(summary = "删除用户")
+    @Parameter(name = "id", description = "用户ID", required = true)
+    public ResultVO<String> delete(@PathVariable Long id) {
+        int deleted = customerService.deleteEq("id", id);
+        return ResultVO.resultMsg(deleted > 0, deleted > 0 ? "删除成功" : "删除失败");
     }
 
     @PostMapping("page")
@@ -82,8 +88,10 @@ public class CustomerController {
 - [ ] `@Tag(name = "模块名称")`
 - [ ] `@RequiredArgsConstructor`（构造器注入）
 - [ ] 每个方法添加 `@Operation(summary = "接口说明")`
-- [ ] GET 请求使用 `@Parameter` 注解参数
-- [ ] POST 请求使用 `@RequestBody @Valid` 注解参数
+- [ ] **GET 请求**：使用 `@GetMapping`，参数使用 `@RequestParam` 或 `@PathVariable`，添加 `@Parameter` 注解
+- [ ] **POST 请求**：使用 `@PostMapping`，参数使用 `@RequestBody @Valid` 注解
+- [ ] **PUT 请求**：使用 `@PutMapping`，参数使用 `@RequestBody @Valid` 注解
+- [ ] **DELETE 请求**：使用 `@DeleteMapping`，参数使用 `@PathVariable` 或 `@RequestParam`，添加 `@Parameter` 注解
 
 ---
 
@@ -346,7 +354,7 @@ public ResultVO<List<Customer>> adminList() {
 
 ## 参数验证
 
-### GET 请求
+### GET 请求（使用 @RequestParam）
 
 ```java
 @GetMapping("detail")
@@ -360,6 +368,29 @@ public ResultVO<Customer> detail(
 }
 ```
 
+### GET 请求（使用 @PathVariable）
+
+```java
+@GetMapping("detail/{id}")
+@Operation(summary = "用户详情")
+@Parameter(name = "id", description = "用户ID", required = true)
+public ResultVO<Customer> detail(@PathVariable Long id) {
+    Customer customer = customerService.findOnly("id", id).orElseThrow();
+    return ResultVO.success(customer);
+}
+
+// 多个路径变量
+@GetMapping("{userId}/orders/{orderId}")
+@Operation(summary = "用户订单详情")
+@Parameter(name = "userId", description = "用户ID", required = true)
+@Parameter(name = "orderId", description = "订单ID", required = true)
+public ResultVO<Order> getUserOrder(
+    @PathVariable Long userId,
+    @PathVariable Long orderId) {
+    return ResultVO.success(order);
+}
+```
+
 ### POST 请求
 
 ```java
@@ -367,7 +398,89 @@ public ResultVO<Customer> detail(
 @Operation(summary = "新增用户")
 public ResultVO<String> add(@RequestBody @Valid UserAdd add) {
     // @Valid 触发参数验证
-    return ResultVO.success();
+    customerService.saveOne(customer);
+    return ResultVO.successMessage("新增成功");
+}
+```
+
+### PUT 请求
+
+```java
+@PutMapping("update")
+@Operation(summary = "更新用户")
+public ResultVO<String> update(@RequestBody @Valid UserEdit edit) {
+    // @Valid 触发参数验证
+    customerService.update(customer, SQLOperator.EQ, "id");
+    return ResultVO.successMessage("更新成功");
+}
+
+// 使用 @PathVariable
+@PutMapping("update/{id}")
+@Operation(summary = "更新用户")
+@Parameter(name = "id", description = "用户ID", required = true)
+public ResultVO<String> update(
+    @PathVariable Long id,
+    @RequestBody @Valid UserEdit edit) {
+    edit.setId(id);
+    customerService.update(edit, SQLOperator.EQ, "id");
+    return ResultVO.successMessage("更新成功");
+}
+```
+
+### DELETE 请求
+
+```java
+// 使用 @PathVariable（推荐）
+@DeleteMapping("delete/{id}")
+@Operation(summary = "删除用户")
+@Parameter(name = "id", description = "用户ID", required = true)
+public ResultVO<String> delete(@PathVariable Long id) {
+    int deleted = customerService.deleteEq("id", id);
+    return ResultVO.resultMsg(deleted > 0, deleted > 0 ? "删除成功" : "删除失败");
+}
+
+// 使用 @RequestParam
+@DeleteMapping("delete")
+@Operation(summary = "删除用户")
+@Parameter(name = "id", description = "用户ID", required = true)
+public ResultVO<String> delete(@RequestParam Long id) {
+    int deleted = customerService.deleteEq("id", id);
+    return ResultVO.resultMsg(deleted > 0, deleted > 0 ? "删除成功" : "删除失败");
+}
+
+// 批量删除
+@DeleteMapping("batch-delete")
+@Operation(summary = "批量删除用户")
+public ResultVO<String> batchDelete(@RequestBody @Valid List<Long> ids) {
+    ids.forEach(id -> customerService.deleteEq("id", id));
+    return ResultVO.successMessage("批量删除成功");
+}
+```
+
+### 混合参数
+
+```java
+// 路径变量 + 查询参数
+@GetMapping("users/{userId}/orders")
+@Operation(summary = "查询用户订单")
+@Parameter(name = "userId", description = "用户ID", required = true)
+@Parameter(name = "status", description = "订单状态", required = false)
+public ResultVO<List<Order>> getUserOrders(
+    @PathVariable Long userId,
+    @RequestParam(required = false) Integer status) {
+    return ResultVO.success(orders);
+}
+
+// 路径变量 + 请求体
+@PutMapping("users/{userId}/password")
+@Operation(summary = "修改用户密码")
+@Parameter(name = "userId", description = "用户ID", required = true)
+public ResultVO<String> updatePassword(
+    @PathVariable Long userId,
+    @RequestBody @Valid PasswordChange passwordChange) {
+    passwordChange.setUserId(userId);
+    customerService.updatePassword(passwordChange);
+    return ResultVO.successMessage("密码修改成功");
 }
 ```
 
@@ -379,8 +492,21 @@ public ResultVO<String> add(@RequestBody @Valid UserAdd add) {
 - [ ] 使用 `@Tag` 添加模块说明
 - [ ] 使用构造器注入 Service
 - [ ] 每个方法添加 `@Operation`
-- [ ] GET 请求使用 `@Parameter`
-- [ ] POST 请求使用 `@RequestBody @Valid`
+- [ ] **GET 请求**：
+  - [ ] 使用 `@GetMapping`
+  - [ ] 查询参数使用 `@RequestParam` 并添加 `@Parameter`
+  - [ ] 路径变量使用 `@PathVariable` 并添加 `@Parameter`
+- [ ] **POST 请求**：
+  - [ ] 使用 `@PostMapping`
+  - [ ] 请求体使用 `@RequestBody @Valid`
+- [ ] **PUT 请求**：
+  - [ ] 使用 `@PutMapping`
+  - [ ] 请求体使用 `@RequestBody @Valid`
+  - [ ] 路径变量使用 `@PathVariable` 并添加 `@Parameter`
+- [ ] **DELETE 请求**：
+  - [ ] 使用 `@DeleteMapping`
+  - [ ] 路径变量使用 `@PathVariable`（推荐）或 `@RequestParam`
+  - [ ] 添加 `@Parameter` 注解
 - [ ] 统一返回 `ResultVO` 或 `ResultPageVO`
 - [ ] 不直接操作数据库
 - [ ] 不包含业务逻辑
