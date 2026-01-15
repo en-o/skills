@@ -44,7 +44,7 @@ public class UserEdit {
     private String phone;
 }
 
-public class UserPage extends PageQuery {
+public class UserPage {
     private String loginName;
     private Integer status;
 }

@@ -43,7 +43,27 @@
 </dependency>
 ```
 
-#### 4. 数据库驱动
+#### 4. jdevelops-apis-exception
+- **用途**: 全局异常处理，统一返回结果封装（包含 jdevelops-apis-result）
+- **必要性**: ✅ 必需
+- **说明**: 这是最核心的组件，提供：
+  - 全局异常捕获和处理
+  - 统一的 API 返回格式（ResultVO、ResultPageVO）
+  - BusinessException、TokenException 等内置异常
+  - @DisposeException 自定义异常处理
+  - **自动引入 jdevelops-apis-result**，无需单独添加
+- **Maven 依赖**:
+```xml
+<dependency>
+    <groupId>cn.tannn.jdevelops</groupId>
+    <artifactId>jdevelops-apis-exception</artifactId>
+    <version>${jdevelops.version}</version>
+</dependency>
+```
+- **包含的依赖**: jdevelops-apis-result、jdevelops-utils-aop
+- **详细文档**: [guides/exception.md](../guides/exception.md)
+
+#### 5. 数据库驱动
 - **用途**: 连接数据库
 - **必要性**: ✅ 必需（根据使用的数据库选择）
 - **Maven 依赖**:
@@ -67,31 +87,23 @@
 
 这些组件不是必需的，但能显著提升开发效率和项目质量。
 
-#### 5. jdevelops-apis-result
-- **用途**: 统一返回结果封装（ResultVO、ResultPageVO）
+#### 6. jdevelops-apis-knife4j
+- **用途**: Knife4j API 文档（基于 OpenAPI 3 和 Swagger）
 - **必要性**: 🟡 强烈推荐
-- **说明**: 提供统一的 API 返回格式
+- **说明**:
+  - 增强版 Swagger UI，提供更美观的 API 文档
+  - 支持在线调试、离线文档、授权配置等功能
+  - 基于 knife4j-openapi3-jakarta-spring-boot-starter
 - **Maven 依赖**:
 ```xml
 <dependency>
     <groupId>cn.tannn.jdevelops</groupId>
-    <artifactId>jdevelops-apis-result</artifactId>
+    <artifactId>jdevelops-apis-knife4j</artifactId>
     <version>${jdevelops.version}</version>
 </dependency>
 ```
-
-#### 6. springdoc-openapi-starter-webmvc-ui
-- **用途**: Swagger 文档自动生成
-- **必要性**: 🟡 强烈推荐
-- **说明**: 自动生成 API 文档，方便前后端联调
-- **Maven 依赖**:
-```xml
-<dependency>
-    <groupId>org.springdoc</groupId>
-    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-    <version>2.3.0</version>
-</dependency>
-```
+- **访问地址**: http://localhost:8080/doc.html
+- **官方文档**: https://doc.xiaominfo.com/
 
 ---
 
@@ -214,12 +226,12 @@
 **必选组件**:
 - jdevelops-spring-boot-starter
 - jdevelops-dals-jpa
-- jdevelops-apis-result
+- jdevelops-apis-exception（包含 jdevelops-apis-result）
 - Spring Boot Starter Data JPA
 - MySQL Connector
 
 **推荐组件**:
-- springdoc-openapi-starter-webmvc-ui
+- jdevelops-apis-knife4j
 
 ### 场景 2: 管理后台系统
 适用于需要用户登录、权限控制的管理系统。
@@ -227,13 +239,13 @@
 **必选组件**:
 - jdevelops-spring-boot-starter
 - jdevelops-dals-jpa
-- jdevelops-apis-result
+- jdevelops-apis-exception（包含 jdevelops-apis-result）
 - Spring Boot Starter Data JPA
 - MySQL Connector
 
 **推荐组件**:
 - jdevelops-authentications-rjwt（认证）
-- springdoc-openapi-starter-webmvc-ui
+- jdevelops-apis-knife4j
 - jdevelops-logs-logback（操作日志）
 
 **可选组件**:
@@ -246,13 +258,13 @@
 **必选组件**:
 - jdevelops-spring-boot-starter
 - jdevelops-dals-jpa
-- jdevelops-apis-result
+- jdevelops-apis-exception（包含 jdevelops-apis-result）
 - Spring Boot Starter Data JPA
 - MySQL Connector
 
 **推荐组件**:
 - jdevelops-authentications-rjwt
-- springdoc-openapi-starter-webmvc-ui
+- jdevelops-apis-knife4j
 - jdevelops-utils-oss（文件上传）
 - jdevelops-utils-cache（缓存）
 
@@ -266,13 +278,13 @@
 **必选组件**:
 - jdevelops-spring-boot-starter
 - jdevelops-dals-jpa
-- jdevelops-apis-result
+- jdevelops-apis-exception（包含 jdevelops-apis-result）
 - Spring Boot Starter Data JPA
 - MySQL Connector
 
 **推荐组件**:
 - jdevelops-authentications-jwt（轻量级认证）
-- springdoc-openapi-starter-webmvc-ui
+- jdevelops-apis-knife4j
 
 ---
 
