@@ -1,5 +1,21 @@
 # Controller 层代码生成指南
 
+## ⚠️ 重要提醒：Import 语句处理
+
+**生成代码时不要自动生成 import 语句**，让用户手动导入或由 IDE 自动处理。
+
+原因：
+- jdevelops 框架的包路径可能因项目而异
+- 用户项目可能有自定义的实现
+- IDE 可以自动识别并导入正确的包
+
+**正确做法**：
+- ✅ 只生成类的主体代码（注解、字段、方法）
+- ✅ 让用户使用 IDE 的自动导入功能（如 IDEA 的 Alt+Enter）
+- ❌ 不要自动生成 `import cn.tannn.jdevelops.*` 等语句
+
+---
+
 ## 快速参考
 
 Controller 使用 `@PathRestController` 注解，统一返回 `ResultVO` 或 `ResultPageVO`。
@@ -9,23 +25,6 @@ Controller 使用 `@PathRestController` 注解，统一返回 `ResultVO` 或 `Re
 ## 基本模板
 
 ```java
-
-import cn.tannn.jdevelops.annotations.web.mapping.PathRestController;
-import cn.tannn.jdevelops.result.response.ResultVO;
-import cn.tannn.jdevelops.result.response.ResultPageVO;
-import cn.tannn.jdevelops.jpa.result.JpaPageResult;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.extensions.Extension;
-import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
 @PathRestController("user")
 @Tag(name = "用户管理", extensions = {
     @Extension(properties = {

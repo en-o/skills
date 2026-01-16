@@ -1,5 +1,21 @@
 # Entity 层代码生成指南
 
+## ⚠️ 重要提醒：Import 语句处理
+
+**生成代码时不要自动生成 import 语句**，让用户手动导入或由 IDE 自动处理。
+
+原因：
+- jdevelops 框架的包路径可能因项目而异
+- 用户项目可能有自定义的基类实现
+- IDE 可以自动识别并导入正确的包
+
+**正确做法**：
+- ✅ 只生成类的主体代码（注解、字段、方法）
+- ✅ 让用户使用 IDE 的自动导入功能（如 IDEA 的 Alt+Enter）
+- ❌ 不要自动生成 `import cn.tannn.jdevelops.*` 等语句
+
+---
+
 ## 快速参考
 
 Entity 类继承 `JpaCommonBean` 或 `JpaCommonBean2`，使用 JPA 注解映射数据库表。
@@ -100,6 +116,59 @@ public class Order extends JpaCommonBean2 {
 - `updateTime`：更新时间
 
 查看源码确认：https://github.com/en-o/Jdevelops
+
+### JpaCommonBean 实现示例
+
+如果项目中没有 JpaCommonBean，**必须**在 `common/pojo` 包下创建自己的基类。参考以下实现：
+
+```java
+package com.example.project.common.pojo;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.sunway.jpa.generator.UuidCustomGenerator;
+import com.sunway.jpa.modle.json.JpaAuditTimeFormatFields;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.*;
+
+/**
+ * 公共的实体类- 处理时间的 建议用这个
+ * @author tn
+ * @date 2021-01-21 14:20
+ */
+@MappedSuperclass
+@DynamicInsert
+@DynamicUpdate
+@SelectBeforeUpdate
+@Access(AccessType.FIELD)
+@Getter
+@Setter
+public class JpaCommonBean<B> extends JpaAuditTimeFormatFields<B> {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuidCustomGenerator")
+    @GenericGenerator(name = "uuidCustomGenerator", type = UuidCustomGenerator.class)
+    @Column(columnDefinition="bigint")
+    @Comment("uuid")
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
+
+    @Override
+    public String toString() {
+        return "CommonBean{" +
+               "id=" + id +
+               '}';
+    }
+}
+```
+
+**重要提醒**：
+- ⚠️ 这是一个参考实现，请根据项目实际情况调整包路径
+- ⚠️ 生成Entity代码时，不要自动生成import语句，让用户或IDE自动处理
+- 如果使用 JDevelops 框架，框架会提供标准的 JpaCommonBean
+- 如果是纯 Spring Boot 项目，需要在项目中创建此基类
 
 ---
 

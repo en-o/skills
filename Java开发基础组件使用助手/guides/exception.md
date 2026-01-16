@@ -102,6 +102,113 @@ jdevelops:
 
 ---
 
+## 项目自定义异常（重要）
+
+### 创建项目专属异常类
+
+**在构建新项目时，必须在 `common/exception` 包下创建项目专属的异常类**，例如：
+- 图书管理系统 → `BookException`
+- 订单系统 → `OrderException`
+- 用户系统 → `UserException`
+
+### 项目异常类模板
+
+**重要提醒**：
+- ⚠️ 生成异常类代码时，不要自动生成import语句，让用户或IDE自动处理
+- ⚠️ BusinessException需要从 jdevelops-apis-exception 依赖中导入
+- ⚠️ ExceptionCode为自定义枚举类，需要根据项目自行创建
+
+```java
+package com.example.project.common.exception;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+/**
+ * 项目专属业务异常
+ * 用于处理本项目特定的业务逻辑异常
+ *
+ * @author tn
+ * @date 2021-01-22 14:15
+ */
+@AllArgsConstructor
+@Getter
+public class BookException extends BusinessException {
+
+    public BookException(int code, String message) {
+        super(code, message);
+    }
+
+    public BookException(String message) {
+        super(message);
+    }
+
+    public BookException(ExceptionCode errorCode) {
+        super(errorCode.getCode(), errorCode.getMessage());
+    }
+}
+```
+
+**说明**：
+- 继承 `BusinessException` 而非 `RuntimeException`，使用框架统一的异常处理机制
+- 支持三种构造方法：
+  1. `BookException(int code, String message)` - 自定义错误码和消息
+  2. `BookException(String message)` - 使用默认错误码(500)
+  3. `BookException(ExceptionCode errorCode)` - 使用错误码枚举
+
+### 配套异常处理器
+
+创建异常类后，需要在同一包下创建对应的异常处理器：
+
+**重要提醒**：
+- ⚠️ 生成异常处理器代码时，不要自动生成import语句，让用户或IDE自动处理
+
+```java
+package com.example.project.common.exception;
+
+/**
+ * 项目异常处理器
+ */
+@Slf4j
+@Component
+public class BookExceptionHandler {
+
+    @DisposeException(BookException.class)
+    public ResultVO<Object> handleBookException(BookException e) {
+        log.error("业务异常: {}", e.getMessage(), e);
+        return ResultVO.error(e.getCode(), e.getMessage());
+    }
+}
+```
+
+### 使用示例
+
+```java
+@Service
+public class BookServiceImpl extends J2Service<Book> implements BookService {
+
+    @Override
+    public void borrowBook(Long bookId, Long userId) {
+        Book book = findById(bookId)
+            .orElseThrow(() -> new BookException("图书不存在"));
+
+        if (book.getStock() <= 0) {
+            throw new BookException("图书库存不足");
+        }
+
+        // 业务逻辑...
+    }
+}
+```
+
+**为什么需要项目专属异常？**
+- ✅ 更好的异常分类和管理
+- ✅ 便于统一处理项目特定的业务异常
+- ✅ 提高代码可读性和可维护性
+- ✅ 支持自定义错误码和错误信息格式
+
+---
+
 ## 内置异常类
 
 ### 1. BusinessException（业务异常）

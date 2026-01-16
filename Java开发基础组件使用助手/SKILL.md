@@ -285,6 +285,20 @@ bash scripts/download-docs.sh
 
 ## 📐 核心规范速查
 
+### ⚠️ 代码生成重要提醒
+
+**禁止自动生成 import 语句**：
+- ❌ 不要生成任何 `import` 语句（包括 `import cn.tannn.jdevelops.*`、`import lombok.*` 等）
+- ✅ 只生成类的主体代码（package、注解、类定义、字段、方法）
+- ✅ 让用户使用 IDE 的自动导入功能（如 IDEA 的 Alt+Enter）
+
+原因：
+- jdevelops 框架的包路径可能因项目而异
+- 用户项目可能有自定义的基类实现（如 JpaCommonBean）
+- IDE 会自动识别并导入正确的包
+
+---
+
 ### 强制规范（MUST）
 - ✅ JDK 17 + Spring Boot 3.x（默认 3.2.7）
 - ✅ 使用 JPA 操作数据库

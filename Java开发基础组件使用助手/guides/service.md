@@ -1,5 +1,21 @@
 # Service 层代码生成指南
 
+## ⚠️ 重要提醒：Import 语句处理
+
+**生成代码时不要自动生成 import 语句**，让用户手动导入或由 IDE 自动处理。
+
+原因：
+- jdevelops 框架的包路径可能因项目而异
+- 用户项目可能有自定义的实现
+- IDE 可以自动识别并导入正确的包
+
+**正确做法**：
+- ✅ 只生成类的主体代码（注解、字段、方法）
+- ✅ 让用户使用 IDE 的自动导入功能（如 IDEA 的 Alt+Enter）
+- ❌ 不要自动生成 `import cn.tannn.jdevelops.*` 等语句
+
+---
+
 ## 快速参考
 
 Service 接口继承 `J2Service<Entity>`，Service 实现继承 `J2ServiceImpl<DAO, Entity, ID>`。
