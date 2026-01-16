@@ -654,6 +654,7 @@ public interface CustomerDao extends JpaRepository<Customer, Long> {
 ```java
 // {module}/service/CustomerService.java
 public interface CustomerService extends J2Service<Customer> {
+    // 自定义业务方法（可选）
     Optional<Customer> findByLoginName(String loginName);
 }
 ```
@@ -670,10 +671,11 @@ public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Lo
         super(Customer.class);
     }
 
-    @Override
-    public Optional<Customer> findByLoginName(String loginName) {
-        return findOne("loginName", loginName, SQLOperator.EQ);
-    }
+    // 如果需要自定义查询，通过 getJpaBasicsDao() 调用 DAO 方法
+    // 示例：调用 DAO 中的自定义方法
+     public Optional<Customer> findByLoginName(String loginName) {
+         return getJpaBasicsDao().findByLoginName(loginName);
+     }
 }
 ```
 
@@ -681,6 +683,10 @@ public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Lo
 - 继承 `J2ServiceImpl<DAO, Entity, ID>`（**三个泛型参数**：DAO接口、Entity实体、ID类型）
 - 使用无参构造器调用 `super(Entity.class)`
 - DAO会通过框架自动注入，**无需手动注入**
+- **⚠️ 不要在 ServiceImpl 中直接使用继承的方法**（如 `findOne()`、`findList()` 等）
+- **推荐做法**：
+  - 简单查询：在 Controller 中直接调用 Service 继承的方法（如 `customerService.findOnly("loginName", loginName)`）
+  - 复杂查询：在 DAO 中定义方法，在 ServiceImpl 中通过 `getJpaBasicsDao()` 调用
 
 ---
 
