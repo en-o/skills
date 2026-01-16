@@ -194,13 +194,13 @@ def main():
   python query_versions.py
 
   # 查询指定组件
-  python query_versions.py -a jdevelops-apis-auth
+  python query_versions.py -a jdevelops-apis-result
 
   # 输出 Maven 依赖格式
-  python query_versions.py -a jdevelops-apis-auth -f maven
+  python query_versions.py -a jdevelops-apis-result -f maven
 
   # 输出 Gradle 依赖格式
-  python query_versions.py -a jdevelops-apis-auth -f gradle
+  python query_versions.py -a jdevelops-apis-result -f gradle
         """
     )
 
