@@ -325,6 +325,45 @@ bash scripts/download-docs.sh
 
 ### 关键规范说明
 
+#### ⚠️ ServiceImpl 泛型参数（必须遵守）
+- **必须使用三个泛型参数**：`J2ServiceImpl<DAO, Entity, ID>`
+  ```java
+  // ✅ 正确：三个泛型参数
+  public class UserServiceImpl extends J2ServiceImpl<UserDao, User, Long>
+      implements UserService {
+
+      public UserServiceImpl() {
+          super(User.class);
+      }
+  }
+
+  // ❌ 错误：缺少ID类型参数
+  public class UserServiceImpl extends J2ServiceImpl<UserDao, User>
+  ```
+- DAO会通过框架自动注入，**无需手动注入**
+- 详见：[guides/service.md](guides/service.md)
+
+#### ⚠️ 分页查询规范（必须遵守）
+- **必须使用 POST 请求** + `@RequestBody` 接收分页参数对象
+  ```java
+  // ✅ 正确：POST + @RequestBody
+  @PostMapping("page")
+  @Operation(summary = "分页查询用户")
+  public ResultPageVO<User, JpaPageResult<User>> page(
+      @RequestBody @Valid UserPage page) {
+      Page<User> result = userService.findPage(page, page.getPage());
+      JpaPageResult<User> pageResult = JpaPageResult.toPage(result, User.class);
+      return ResultPageVO.success(pageResult, "查询成功");
+  }
+
+  // ❌ 错误：使用 GET + 多个 @RequestParam
+  @GetMapping("/list")
+  public ResultPageVO<User, JpaPageResult<User>> list(
+      @RequestParam int page,
+      @RequestParam int size) { ... }
+  ```
+- 详见：[guides/controller.md#分页查询](guides/controller.md)
+
 #### 敏感字段处理
 - ⚠️ **不推荐** 使用 `@JsonIgnore`
 - ✅ **推荐** 使用 `@JsonView(Views.UserPassword.class)` 进行灵活控制
@@ -373,6 +412,8 @@ src/main/resources/
 
 生成代码后，必须验证：
 - [ ] 包路径符合规范（controller.{domain} 或 {module}.{layer}）
+- [ ] **ServiceImpl 使用三个泛型参数**：`J2ServiceImpl<DAO, Entity, ID>`
+- [ ] **分页查询使用 @PostMapping + @RequestBody**（不是 @GetMapping + @RequestParam）
 - [ ] 继承了正确的框架基类（J2Service、JpaCommonBean）
 - [ ] 使用了框架注解（@PathRestController、@ApiMapping）
 - [ ] 统一返回格式（ResultVO/ResultPageVO）

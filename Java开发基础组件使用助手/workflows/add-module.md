@@ -666,10 +666,8 @@ public interface CustomerService extends J2Service<Customer> {
 public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Long>
     implements CustomerService {
 
-    private final CustomerDao customerDao;
-
-    public CustomerServiceImpl(CustomerDao customerDao) {
-        this.customerDao = customerDao;
+    public CustomerServiceImpl() {
+        super(Customer.class);
     }
 
     @Override
@@ -680,8 +678,9 @@ public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Lo
 ```
 
 **关键点**：
-- 继承 `J2ServiceImpl<DAO, Entity, ID>`（三个泛型参数）
-- 使用构造器调用 `super(Entity.class)`
+- 继承 `J2ServiceImpl<DAO, Entity, ID>`（**三个泛型参数**：DAO接口、Entity实体、ID类型）
+- 使用无参构造器调用 `super(Entity.class)`
+- DAO会通过框架自动注入，**无需手动注入**
 
 ---
 

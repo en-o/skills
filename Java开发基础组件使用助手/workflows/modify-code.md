@@ -174,6 +174,7 @@ grep -r "private Long" --include="*.java" {module}/entity/ | \
 - [ ] 统一返回格式：`ResultVO<T>` 或 `ResultPageVO<T, JpaPageResult<T>>`
 - [ ] GET 请求使用 `@Parameter` 注解参数
 - [ ] POST 请求使用 `@RequestBody @Valid` 注解参数
+- [ ] **分页查询使用 `@PostMapping("page")` + `@RequestBody @Valid`**（不是 @GetMapping + @RequestParam）
 - [ ] 每个方法添加 `@Operation` 注解
 
 ### 验证命令
@@ -199,9 +200,10 @@ grep -r "public.*{" --include="*Controller.java" controller/ | \
 ### 检查项
 
 - [ ] Service 接口继承 `J2Service<Entity>`
-- [ ] Service 实现继承 `J2ServiceImpl<DAO, Entity, ID>`
+- [ ] **Service 实现继承 `J2ServiceImpl<DAO, Entity, ID>`（必须包含三个泛型参数）**
 - [ ] 实现类使用 `@Service` 注解
-- [ ] 使用构造器注入 DAO
+- [ ] **使用无参构造器调用 `super(Entity.class)`**
+- [ ] **DAO 通过框架自动注入，无需手动注入**
 - [ ] 方法命名遵循规范（findByXxx、saveOne、updateOne 等）
 
 ### 验证命令
