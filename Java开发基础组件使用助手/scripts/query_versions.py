@@ -280,6 +280,41 @@ class JDevelopsVersionChecker:
         Returns:
             组件信息，包含最新版本号
         """
+        self._log(f"🔍 开始查询组件: {group_id}:{artifact_id}")
+
+        # 尝试所有 Maven 仓库
+        for repo in self.MAVEN_REPOS:
+            self._log(f"📡 尝试仓库: {repo['name']}")
+
+            try:
+                result = self._search_artifact_from_repo(repo, artifact_id, group_id)
+                if result:
+                    self._log(f"✅ 从 {repo['name']} 查询成功", force=True)
+                    return result
+                else:
+                    self._log(f"⚠️  {repo['name']} 未找到结果，尝试下一个仓库")
+            except Exception as e:
+                self._log(f"❌ {repo['name']} 查询失败: {e}")
+                continue
+
+        # 所有仓库都失败
+        print("❌ 所有 Maven 仓库都查询失败", file=sys.stderr)
+        print("💡 可能的原因:", file=sys.stderr)
+        print("   1. 网络连接问题（尝试检查网络或使用代理）", file=sys.stderr)
+        print("   2. Maven 仓库暂时不可用", file=sys.stderr)
+        print("   3. 组件不存在", file=sys.stderr)
+        return None
+
+    def _search_artifact_from_repo(self, repo: Dict, artifact_id: str, group_id: str) -> Optional[Dict]:
+        """从指定仓库查询单个组件"""
+        if repo['type'] == 'maven_central':
+            return self._search_maven_central_artifact(repo['search_api'], artifact_id, group_id)
+        elif repo['type'] == 'nexus':
+            return self._search_nexus_artifact(repo['search_api'], artifact_id, group_id)
+        return None
+
+    def _search_maven_central_artifact(self, api_url: str, artifact_id: str, group_id: str) -> Optional[Dict]:
+        """从 Maven Central 查询单个组件"""
         params = {
             'q': f'g:{group_id} AND a:{artifact_id}',
             'rows': 1,
@@ -287,14 +322,16 @@ class JDevelopsVersionChecker:
             'core': 'gav'
         }
 
-        # 重试机制：最多重试3次
         max_retries = 3
         for attempt in range(max_retries):
             try:
                 if attempt > 0:
-                    print(f"🔄 第 {attempt + 1} 次重试...", file=sys.stderr)
+                    wait_time = 2 ** attempt
+                    self._log(f"⏳ 等待 {wait_time} 秒后重试...")
+                    time.sleep(wait_time)
+                    self._log(f"🔄 第 {attempt + 1} 次重试...")
 
-                response = self.session.get(self.MAVEN_SEARCH_API, params=params, timeout=30)
+                response = self.session.get(api_url, params=params, timeout=30)
                 response.raise_for_status()
                 data = response.json()
 
@@ -309,28 +346,60 @@ class JDevelopsVersionChecker:
                     }
                 return None
 
-            except requests.exceptions.Timeout:
-                if attempt < max_retries - 1:
-                    print(f"⏱️  请求超时，正在重试 ({attempt + 1}/{max_retries})...", file=sys.stderr)
-                    import time
-                    time.sleep(2)
-                    continue
-                else:
-                    print(f"❌ 网络请求超时: 已重试 {max_retries} 次仍然失败", file=sys.stderr)
-                    print("💡 提示: 请检查网络连接或稍后重试", file=sys.stderr)
-                    return None
-            except requests.exceptions.RequestException as e:
-                if attempt < max_retries - 1:
-                    print(f"⚠️  网络错误，正在重试 ({attempt + 1}/{max_retries})...", file=sys.stderr)
-                    import time
-                    time.sleep(2)
-                    continue
-                else:
-                    print(f"❌ 网络请求失败: {e}", file=sys.stderr)
-                    return None
             except Exception as e:
-                print(f"❌ 解析数据失败: {e}", file=sys.stderr)
+                self._log(f"⚠️  查询失败: {e}")
+                if attempt < max_retries - 1:
+                    continue
+                raise
+
+        return None
+
+    def _search_nexus_artifact(self, api_url: str, artifact_id: str, group_id: str) -> Optional[Dict]:
+        """从 Nexus 仓库查询单个组件"""
+        params = {
+            'g': group_id,
+            'a': artifact_id,
+            'count': 1
+        }
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    wait_time = 2 ** attempt
+                    self._log(f"⏳ 等待 {wait_time} 秒后重试...")
+                    time.sleep(wait_time)
+                    self._log(f"🔄 第 {attempt + 1} 次重试...")
+
+                response = self.session.get(api_url, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+
+                artifacts_data = data.get('data', [])
+                if artifacts_data:
+                    item = artifacts_data[0]
+                    # 获取最新版本
+                    latest_version = None
+                    for artifact_hit in item.get('artifactHits', []):
+                        for artifact_link in artifact_hit.get('artifactLinks', []):
+                            version = artifact_link.get('version', '')
+                            if not latest_version or self._compare_versions(version, latest_version) > 0:
+                                latest_version = version
+
+                    if latest_version:
+                        return {
+                            'groupId': item.get('groupId', ''),
+                            'artifactId': item.get('artifactId', ''),
+                            'version': latest_version,
+                            'timestamp': 0
+                        }
                 return None
+
+            except Exception as e:
+                self._log(f"⚠️  查询失败: {e}")
+                if attempt < max_retries - 1:
+                    continue
+                raise
 
         return None
 
@@ -392,9 +461,20 @@ def main():
         help='输出格式: table(表格), maven(Maven依赖), gradle(Gradle依赖), json(JSON格式)'
     )
 
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='显示详细日志'
+    )
+
+    parser.add_argument(
+        '--proxy',
+        help='代理服务器地址，如 http://127.0.0.1:7890'
+    )
+
     args = parser.parse_args()
 
-    checker = JDevelopsVersionChecker()
+    checker = JDevelopsVersionChecker(verbose=args.verbose, proxy=args.proxy)
 
     if args.artifact:
         # 查询单个组件
