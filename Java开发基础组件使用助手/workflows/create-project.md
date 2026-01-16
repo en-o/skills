@@ -533,7 +533,7 @@ mkdir -p src/test/resources
 
     <properties>
         <java.version>17</java.version>
-        <jdevelops.version>查询到的最新版本</jdevelops.version>
+        <jdevelops.version>1.0.3</jdevelops.version>
     </properties>
 
     <dependencies>

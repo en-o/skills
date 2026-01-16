@@ -41,39 +41,63 @@ class JDevelopsVersionChecker:
             'core': 'gav'
         }
 
-        try:
-            response = self.session.get(self.MAVEN_SEARCH_API, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
+        # 重试机制：最多重试3次
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    print(f"🔄 第 {attempt + 1} 次重试...", file=sys.stderr)
 
-            # 解析返回结果
-            docs = data.get('response', {}).get('docs', [])
+                response = self.session.get(self.MAVEN_SEARCH_API, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
 
-            # 按 artifactId 分组，获取每个组件的最新版本
-            artifacts = {}
-            for doc in docs:
-                artifact_id = doc.get('a', '')
-                version = doc.get('v', '')
-                timestamp = doc.get('timestamp', 0)
+                # 解析返回结果
+                docs = data.get('response', {}).get('docs', [])
 
-                if artifact_id not in artifacts or timestamp > artifacts[artifact_id]['timestamp']:
-                    artifacts[artifact_id] = {
-                        'groupId': doc.get('g', ''),
-                        'artifactId': artifact_id,
-                        'version': version,
-                        'timestamp': timestamp
-                    }
+                # 按 artifactId 分组，获取每个组件的最新版本
+                artifacts = {}
+                for doc in docs:
+                    artifact_id = doc.get('a', '')
+                    version = doc.get('v', '')
+                    timestamp = doc.get('timestamp', 0)
 
-            # 转换为列表并按 artifactId 排序
-            result = sorted(artifacts.values(), key=lambda x: x['artifactId'])
-            return result
+                    if artifact_id not in artifacts or timestamp > artifacts[artifact_id]['timestamp']:
+                        artifacts[artifact_id] = {
+                            'groupId': doc.get('g', ''),
+                            'artifactId': artifact_id,
+                            'version': version,
+                            'timestamp': timestamp
+                        }
 
-        except requests.exceptions.RequestException as e:
-            print(f"❌ 网络请求失败: {e}", file=sys.stderr)
-            return []
-        except Exception as e:
-            print(f"❌ 解析数据失败: {e}", file=sys.stderr)
-            return []
+                # 转换为列表并按 artifactId 排序
+                result = sorted(artifacts.values(), key=lambda x: x['artifactId'])
+                return result
+
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    print(f"⏱️  请求超时，正在重试 ({attempt + 1}/{max_retries})...", file=sys.stderr)
+                    import time
+                    time.sleep(2)  # 等待2秒后重试
+                    continue
+                else:
+                    print(f"❌ 网络请求超时: 已重试 {max_retries} 次仍然失败", file=sys.stderr)
+                    print("💡 提示: 请检查网络连接或稍后重试", file=sys.stderr)
+                    return []
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  网络错误，正在重试 ({attempt + 1}/{max_retries})...", file=sys.stderr)
+                    import time
+                    time.sleep(2)
+                    continue
+                else:
+                    print(f"❌ 网络请求失败: {e}", file=sys.stderr)
+                    return []
+            except Exception as e:
+                print(f"❌ 解析数据失败: {e}", file=sys.stderr)
+                return []
+
+        return []
 
     def search_artifact(self, artifact_id: str, group_id: str = "cn.tannn.jdevelops") -> Optional[Dict]:
         """
@@ -93,28 +117,52 @@ class JDevelopsVersionChecker:
             'core': 'gav'
         }
 
-        try:
-            response = self.session.get(self.MAVEN_SEARCH_API, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
+        # 重试机制：最多重试3次
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    print(f"🔄 第 {attempt + 1} 次重试...", file=sys.stderr)
 
-            docs = data.get('response', {}).get('docs', [])
-            if docs:
-                doc = docs[0]
-                return {
-                    'groupId': doc.get('g', ''),
-                    'artifactId': doc.get('a', ''),
-                    'version': doc.get('v', ''),
-                    'timestamp': doc.get('timestamp', 0)
-                }
-            return None
+                response = self.session.get(self.MAVEN_SEARCH_API, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
 
-        except requests.exceptions.RequestException as e:
-            print(f"❌ 网络请求失败: {e}", file=sys.stderr)
-            return None
-        except Exception as e:
-            print(f"❌ 解析数据失败: {e}", file=sys.stderr)
-            return None
+                docs = data.get('response', {}).get('docs', [])
+                if docs:
+                    doc = docs[0]
+                    return {
+                        'groupId': doc.get('g', ''),
+                        'artifactId': doc.get('a', ''),
+                        'version': doc.get('v', ''),
+                        'timestamp': doc.get('timestamp', 0)
+                    }
+                return None
+
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    print(f"⏱️  请求超时，正在重试 ({attempt + 1}/{max_retries})...", file=sys.stderr)
+                    import time
+                    time.sleep(2)
+                    continue
+                else:
+                    print(f"❌ 网络请求超时: 已重试 {max_retries} 次仍然失败", file=sys.stderr)
+                    print("💡 提示: 请检查网络连接或稍后重试", file=sys.stderr)
+                    return None
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  网络错误，正在重试 ({attempt + 1}/{max_retries})...", file=sys.stderr)
+                    import time
+                    time.sleep(2)
+                    continue
+                else:
+                    print(f"❌ 网络请求失败: {e}", file=sys.stderr)
+                    return None
+            except Exception as e:
+                print(f"❌ 解析数据失败: {e}", file=sys.stderr)
+                return None
+
+        return None
 
 
 def print_maven_dependency(artifact: Dict):

@@ -20,10 +20,38 @@
 </dependency>
 ```
 
+- **⚠️ 重要说明**: 此 Starter 已包含以下组件，**无需重复添加**：
+
+  **数据访问层**:
+  - `jdevelops-dals-jpa` - JPA 数据访问层支持
+
+  **API 相关**:
+  - `jdevelops-apis-exception` - 全局异常处理
+  - `jdevelops-apis-knife4j` - Knife4j API 文档
+  - `jdevelops-apis-log` - API 日志记录
+
+  **日志组件**:
+  - `jdevelops-logs-logback` - 日志增强
+  - `jdevelops-logs-p6spy` - SQL 日志监控
+
+  **工具类**:
+  - `jdevelops-utils-validation` - 参数校验工具
+  - `jdevelops-utils-spring` - Spring 工具类
+  - `jdevelops-utils-core` - 核心工具类
+  - `jdevelops-utils-http` - HTTP 工具类
+  - `jdevelops-utils-time` - 时间处理工具
+
+  **第三方依赖**:
+  - `spring-boot-starter-web` - Spring Boot Web 支持
+  - `commons-codec` - Apache Commons 编解码库
+
+- **结论**: 使用 `jdevelops-spring-boot-starter` 后，上述组件都已自动引入，可直接使用，无需在 pom.xml 中重复声明。
+
 #### 2. jdevelops-dals-jpa
 - **用途**: JPA 数据访问层支持，提供 JpaCommonBean、J2Service 等基础类
 - **必要性**: ✅ 必需
-- **Maven 依赖**:
+- **说明**: ⚠️ 此组件已被 `jdevelops-spring-boot-starter` 包含，**使用 starter 后无需单独添加**
+- **Maven 依赖**（仅在纯 Spring Boot 项目中需要）:
 ```xml
 <dependency>
     <groupId>cn.tannn.jdevelops</groupId>
@@ -46,13 +74,15 @@
 #### 4. jdevelops-apis-exception
 - **用途**: 全局异常处理，统一返回结果封装（包含 jdevelops-apis-result）
 - **必要性**: ✅ 必需
-- **说明**: 这是最核心的组件，提供：
-  - 全局异常捕获和处理
-  - 统一的 API 返回格式（ResultVO、ResultPageVO）
-  - BusinessException、TokenException 等内置异常
-  - @DisposeException 自定义异常处理
-  - **自动引入 jdevelops-apis-result**，无需单独添加
-- **Maven 依赖**:
+- **说明**:
+  - ⚠️ 此组件已被 `jdevelops-spring-boot-starter` 包含，**使用 starter 后无需单独添加**
+  - 这是最核心的组件，提供：
+    - 全局异常捕获和处理
+    - 统一的 API 返回格式（ResultVO、ResultPageVO）
+    - BusinessException、TokenException 等内置异常
+    - @DisposeException 自定义异常处理
+    - **自动引入 jdevelops-apis-result**，无需单独添加
+- **Maven 依赖**（仅在纯 Spring Boot 项目中需要）:
 ```xml
 <dependency>
     <groupId>cn.tannn.jdevelops</groupId>
@@ -91,10 +121,11 @@
 - **用途**: Knife4j API 文档（基于 OpenAPI 3 和 Swagger）
 - **必要性**: 🟡 强烈推荐
 - **说明**:
+  - ⚠️ 此组件已被 `jdevelops-spring-boot-starter` 包含，**使用 starter 后无需单独添加**
   - 增强版 Swagger UI，提供更美观的 API 文档
   - 支持在线调试、离线文档、授权配置等功能
   - 基于 knife4j-openapi3-jakarta-spring-boot-starter
-- **Maven 依赖**:
+- **Maven 依赖**（仅在纯 Spring Boot 项目中需要）:
 ```xml
 <dependency>
     <groupId>cn.tannn.jdevelops</groupId>
@@ -194,7 +225,8 @@
 - **用途**: 日志增强（请求日志、操作日志）
 - **适用场景**: 需要详细的日志记录
 - **必要性**: 🟢 可选
-- **Maven 依赖**:
+- **说明**: ⚠️ 此组件已被 `jdevelops-spring-boot-starter` 包含，**使用 starter 后无需单独添加**
+- **Maven 依赖**（仅在纯 Spring Boot 项目中需要）:
 ```xml
 <dependency>
     <groupId>cn.tannn.jdevelops</groupId>
@@ -220,71 +252,80 @@
 
 ## 常见场景推荐组合
 
+### ⚠️ 重要提示
+
+使用 `jdevelops-spring-boot-starter` 后，以下组件已自动包含，**无需在 pom.xml 中重复添加**：
+- jdevelops-dals-jpa
+- jdevelops-apis-exception
+- jdevelops-apis-knife4j
+- jdevelops-apis-log
+- jdevelops-logs-logback
+- jdevelops-logs-p6spy
+- jdevelops-utils-validation
+- jdevelops-utils-spring
+- jdevelops-utils-core
+- jdevelops-utils-http
+- jdevelops-utils-time
+- spring-boot-starter-web
+
+**只需额外添加**：
+- Spring Boot Starter Data JPA（数据库访问）
+- 数据库驱动（MySQL/PostgreSQL 等）
+- 其他可选功能组件（认证、缓存、Excel、OSS 等）
+
+---
+
 ### 场景 1: 基础 CRUD 项目
 适用于简单的增删改查系统，不需要认证、文件上传等功能。
 
 **必选组件**:
-- jdevelops-spring-boot-starter
-- jdevelops-dals-jpa
-- jdevelops-apis-exception（包含 jdevelops-apis-result）
+- jdevelops-spring-boot-starter（已包含 JPA、异常处理、Knife4j、日志等）
 - Spring Boot Starter Data JPA
-- MySQL Connector
+- MySQL Connector（或其他数据库驱动）
 
-**推荐组件**:
-- jdevelops-apis-knife4j
+**说明**: 使用 starter 后，基础功能已全部具备，无需额外添加其他组件
 
 ### 场景 2: 管理后台系统
 适用于需要用户登录、权限控制的管理系统。
 
 **必选组件**:
-- jdevelops-spring-boot-starter
-- jdevelops-dals-jpa
-- jdevelops-apis-exception（包含 jdevelops-apis-result）
+- jdevelops-spring-boot-starter（已包含 JPA、异常处理、Knife4j、日志等）
 - Spring Boot Starter Data JPA
-- MySQL Connector
+- MySQL Connector（或其他数据库驱动）
 
-**推荐组件**:
-- jdevelops-authentications-rjwt（认证）
-- jdevelops-apis-knife4j
-- jdevelops-logs-logback（操作日志）
+**额外添加**:
+- jdevelops-authentications-rjwt（认证鉴权，需要 Redis）
 
 **可选组件**:
 - jdevelops-utils-excel（数据导出）
-- jdevelops-utils-cache（缓存）
+- jdevelops-utils-cache（缓存加速）
 
 ### 场景 3: 电商/内容平台
 适用于需要文件上传、缓存的复杂业务系统。
 
 **必选组件**:
-- jdevelops-spring-boot-starter
-- jdevelops-dals-jpa
-- jdevelops-apis-exception（包含 jdevelops-apis-result）
+- jdevelops-spring-boot-starter（已包含 JPA、异常处理、Knife4j、日志等）
 - Spring Boot Starter Data JPA
-- MySQL Connector
+- MySQL Connector（或其他数据库驱动）
 
-**推荐组件**:
-- jdevelops-authentications-rjwt
-- jdevelops-apis-knife4j
-- jdevelops-utils-oss（文件上传）
-- jdevelops-utils-cache（缓存）
+**额外添加**:
+- jdevelops-authentications-rjwt（认证鉴权）
+- jdevelops-utils-oss（文件上传存储）
+- jdevelops-utils-cache（缓存加速）
 
 **可选组件**:
-- jdevelops-utils-excel
-- jdevelops-logs-logback
+- jdevelops-utils-excel（数据导入导出）
 
 ### 场景 4: 微服务模块
 适用于微服务架构中的单个服务。
 
 **必选组件**:
-- jdevelops-spring-boot-starter
-- jdevelops-dals-jpa
-- jdevelops-apis-exception（包含 jdevelops-apis-result）
+- jdevelops-spring-boot-starter（已包含 JPA、异常处理、Knife4j、日志等）
 - Spring Boot Starter Data JPA
-- MySQL Connector
+- MySQL Connector（或其他数据库驱动）
 
-**推荐组件**:
-- jdevelops-authentications-jwt（轻量级认证）
-- jdevelops-apis-knife4j
+**额外添加**:
+- jdevelops-authentications-jwt（轻量级认证，不依赖 Redis）
 
 ---
 
