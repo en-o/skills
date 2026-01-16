@@ -451,9 +451,42 @@ AI: "好的，我来更新需求总结：
 #### 🟢 功能组件（按需选择）
 
 - **询问**: 是否需要以下功能？
-  - 用户认证和权限管理？
-    - 是 → 添加 `jdevelops-authentications-rjwt`（Redis + JWT）
-    - 或 → 添加 `jdevelops-authentications-jwt`（纯 JWT）
+
+  - **用户认证和权限管理？** ⚠️ 重要选择
+
+    **选项 A - 不需要鉴权**：
+    - 适用场景：纯内部系统、开放API、无需登录的应用
+    - 无需添加任何鉴权组件
+
+    **选项 B - Spring Security + JWT（推荐标准方案）**：
+    - 适用场景：标准化开发、团队熟悉Spring Security、需要灵活定制
+    - 优势：Spring生态标准方案、社区支持好、文档丰富、灵活性高
+    - 需要添加：
+      ```xml
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-security</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>io.jsonwebtoken</groupId>
+          <artifactId>jjwt-api</artifactId>
+          <version>0.11.5</version>
+      </dependency>
+      ```
+    - 需要自行实现：JWT工具类、Security配置、认证过滤器
+
+    **选项 C - JDevelops 鉴权组件（jdevelops-authentications-rjwt）**：
+    - 适用场景：快速开发、需要分布式会话管理、支持强制下线
+    - 优势：开箱即用、内置JWT工具、Redis会话管理、支持多端登录控制
+    - 依赖：需要Redis
+    - 添加：`jdevelops-authentications-rjwt`
+
+    **选项 D - JDevelops 鉴权组件（jdevelops-authentications-jwt）**：
+    - 适用场景：轻量级认证、不想依赖Redis、微服务单个服务
+    - 优势：开箱即用、无需Redis、轻量级
+    - 限制：无法实现强制下线、不支持分布式会话
+    - 添加：`jdevelops-authentications-jwt`
+
   - 文件上传和存储？
     - 是 → 添加 `jdevelops-files-sdk`
   - Excel 导入导出？
@@ -464,23 +497,54 @@ AI: "好的，我来更新需求总结：
     - 是 → 添加 `jdevelops-logs-login`（登录日志）
     - 和/或 → 添加 `jdevelops-logs-audit`（审计日志）
 
-### 版本查询
+### 版本查询（重要）
+
+**⚠️ 在生成 pom.xml 之前，必须先确定 JDevelops 组件版本号**
+
+#### 步骤 1: 尝试动态查询最新版本
 
 使用版本查询工具获取最新版本：
 ```bash
-cd scripts
-python3 query_versions.py
-```
-
-或使用 Web API 查询：
-```bash
+cd /home/tan/.claude/skills/Java开发基础组件使用助手/scripts
 python3 query_versions.py -a jdevelops-spring-boot-starter
 ```
 
+**预期输出**：
+- 成功：显示最新版本号（如 `✅ 最新版本: 1.0.3`）
+- 失败：显示错误信息（如 `❌ 网络请求超时` 或 `❌ 未找到组件`）
+
+#### 步骤 2: 确定版本号
+
+根据查询结果确定版本号：
+
+**情况 A - 查询成功**：
+- 使用查询到的最新版本号
+- 示例：如果查询到 `1.0.4`，则使用 `<jdevelops.version>1.0.4</jdevelops.version>`
+
+**情况 B - 查询失败**：
+- 使用默认版本号：`1.0.3`
+- 原因：网络超时、组件未发布到 Maven Central、或使用私有仓库
+- 说明：版本 `1.0.3` 是已验证的稳定版本
+
+#### 步骤 3: 应用版本号
+
+在生成 pom.xml 时，将确定的版本号填入：
+```xml
+<properties>
+    <java.version>17</java.version>
+    <jdevelops.version>【此处填入步骤2确定的版本号】</jdevelops.version>
+</properties>
+```
+
+**示例**：
+- 查询成功 → `<jdevelops.version>1.0.4</jdevelops.version>`
+- 查询失败 → `<jdevelops.version>1.0.3</jdevelops.version>`（默认值）
+
 ### 依赖确认
 
+- [ ] 已尝试查询最新版本（成功或失败）
+- [ ] JDevelops 版本号已确定（查询结果或默认值 1.0.3）
 - [ ] 所有依赖已选择
-- [ ] 组件版本已确定
 - [ ] 依赖兼容性已验证
 
 ---
