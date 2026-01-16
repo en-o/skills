@@ -320,6 +320,26 @@ bash scripts/download-docs.sh
 - Controller 层 → [guides/controller.md](guides/controller.md)
 - Service 层 → [guides/service.md](guides/service.md)
 - 请求/响应类 → [guides/request-response.md](guides/request-response.md)
+- 异常处理 → [guides/exception.md](guides/exception.md)
+- 配置文件 → [guides/configuration.md](guides/configuration.md)
+
+### 关键规范说明
+
+#### 敏感字段处理
+- ⚠️ **不推荐** 使用 `@JsonIgnore`
+- ✅ **推荐** 使用 `@JsonView(Views.UserPassword.class)` 进行灵活控制
+- 详见：[guides/entity.md#字段可见性控制](guides/entity.md)
+
+#### ServiceImpl DAO 访问
+- ⚠️ 使用 `getJpaBasicsDao()` 而不是 `getDao()`
+- ⚠️ ServiceImpl 中不允许注入其他 Service，只能注入其他 DAO
+- ⚠️ `findById()` 等方法需通过 `getJpaBasicsDao().findById()` 调用，返回 `Optional<T>`
+- 详见：[guides/service.md#DAO访问规范](guides/service.md)
+
+#### 配置文件规范
+- ✅ 使用 `application.yaml` + `application-dev.yaml` + `application-prod.yaml` 形式
+- ⚠️ JWT 配置无需创建 JwtConfig 类，直接在 yaml 中配置
+- 详见：[guides/configuration.md](guides/configuration.md)
 
 ## 📦 标准项目结构
 
@@ -338,7 +358,13 @@ src/main/java/
 │
 └── common/                # 公共组件
     ├── exception/         # 自定义异常
-    └── pojo/              # 公共POJO
+    ├── pojo/              # 公共POJO（如 JpaCommonBean）
+    └── views/             # JsonView 视图类
+
+src/main/resources/
+├── application.yaml        # 主配置文件
+├── application-dev.yaml    # 开发环境配置
+└── application-prod.yaml   # 生产环境配置
 ```
 
 详细说明：[standards/architecture.md](standards/architecture.md)

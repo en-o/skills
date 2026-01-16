@@ -192,29 +192,112 @@ public class JpaCommonBean<B> extends JpaAuditTimeFormatFields<B> {
 
 ## 字段可见性控制
 
-### 永久隐藏（@JsonIgnore）
+### ⚠️ 重要：推荐使用 @JsonView 而非 @JsonIgnore
+
+对于密码等敏感字段，**不推荐使用 @JsonIgnore**，而应该使用 **@JsonView** 进行更灵活的控制。
+
+### 使用 @JsonView 控制字段可见性
+
+#### 1. 创建 Views 视图类
+
+在 `common/views` 包下创建 Views 类：
 
 ```java
-@JsonIgnore
-private String password;
-```
+package com.example.project.common.views;
 
-### 按场景控制（@JsonView）
+/**
+ * 用于序列化的视图
+ */
+public class Views extends com.sunway.result.views.Views {
 
-```java
-// 定义视图
-public class Views {
-    public interface Public {}
-    public interface Internal extends Public {}
+    /**
+     * User - 用户的视图
+     * <p> 需要返回密码请在接口标注这个 </p>
+     */
+    public static class UserPassword implements Public {}
+
+    /**
+     * User - 用户的视图
+     * <p> 需要返回敏感信息请在接口标注这个 </p>
+     */
+    public static class UserSensitive implements Public {}
+
+    /**
+     * User - 用户的视图
+     * <p> 密保相关 </p>
+     */
+    public static class UserSecurityQuestion implements Public {}
 }
-
-// Entity 中使用
-@JsonView(Views.Public.class)
-private String loginName;
-
-@JsonView(Views.Internal.class)
-private String phone;
 ```
+
+#### 2. Entity 中使用 @JsonView
+
+```java
+@Entity
+@Table(name = "tb_account")
+@Getter
+@Setter
+@JsonView({Views.Public.class})  // 类级别默认视图
+public class Account extends JpaCommonBean2<Account> {
+
+    // 普通字段，使用默认 Public 视图
+    @Column(columnDefinition = "varchar(100) not null")
+    @Comment("登录名")
+    private String loginName;
+
+    // 密码字段，使用 UserPassword 视图
+    @Column(columnDefinition = "varchar(100) not null")
+    @Comment("登录密码")
+    @JsonView(Views.UserPassword.class)
+    private String password;
+
+    // 手机号等敏感字段，使用 UserSensitive 视图
+    @Column(columnDefinition = "varchar(20)")
+    @Comment("手机号")
+    @JsonView(Views.UserSensitive.class)
+    private String phone;
+}
+```
+
+#### 3. Controller 中控制返回字段
+
+```java
+@PathRestController("user")
+public class UserController {
+
+    // 普通查询，不返回密码
+    @GetMapping("info")
+    public ResultVO<Account> getUserInfo(@RequestParam Long id) {
+        // 默认只返回 Public 视图的字段，password 不会返回
+        Account account = accountService.findById(id).orElseThrow();
+        return ResultVO.success(account);
+    }
+
+    // 需要返回密码的特殊接口（如管理员查看）
+    @GetMapping("detail-with-password")
+    @JsonView(Views.UserPassword.class)  // 指定返回密码视图
+    public ResultVO<Account> getUserWithPassword(@RequestParam Long id) {
+        // 会返回包括 password 在内的所有 UserPassword 视图字段
+        Account account = accountService.findById(id).orElseThrow();
+        return ResultVO.success(account);
+    }
+}
+```
+
+### @JsonView vs @JsonIgnore 对比
+
+| 特性 | @JsonView | @JsonIgnore |
+|------|-----------|-------------|
+| 灵活性 | ✅ 可根据不同场景返回不同字段 | ❌ 永久隐藏，无法在任何场景返回 |
+| 使用场景 | ✅ 密码、敏感信息等需要按场景控制的字段 | ⚠️ 仅适用于永远不需要返回的字段 |
+| 推荐度 | ⭐⭐⭐⭐⭐ 强烈推荐 | ⭐⭐ 仅在特殊情况下使用 |
+
+### 最佳实践
+
+- ✅ 密码字段：使用 `@JsonView(Views.UserPassword.class)`
+- ✅ 手机号、身份证等敏感信息：使用 `@JsonView(Views.UserSensitive.class)`
+- ✅ 密保问题等：使用 `@JsonView(Views.UserSecurityQuestion.class)`
+- ❌ 避免使用 `@JsonIgnore`，除非字段永远不需要在任何接口返回
 
 ---
 

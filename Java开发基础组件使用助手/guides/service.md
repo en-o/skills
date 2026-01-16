@@ -52,7 +52,8 @@ public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Lo
 
     @Override
     public Optional<Customer> findByLoginName(String loginName) {
-        return findOne("loginName", loginName, SQLOperator.EQ);
+        // ⚠️ 重要：使用 getJpaBasicsDao() 而不是 getDao()
+        return getJpaBasicsDao().findByLoginName(loginName);
     }
 
     @Override
@@ -67,6 +68,105 @@ public class CustomerServiceImpl extends J2ServiceImpl<CustomerDao, Customer, Lo
 - 构造函数调用 `super(Customer.class)`
 - 使用 `@Service` 注解
 - DAO 会通过框架自动注入，无需手动注入
+
+---
+
+## ⚠️ 重要：DAO 访问规范
+
+### 使用 getJpaBasicsDao() 而非 getDao()
+
+在 ServiceImpl 中访问 DAO 时，**必须使用 `getJpaBasicsDao()` 方法**：
+
+```java
+// ✅ 正确：使用 getJpaBasicsDao()
+@Override
+public Optional<Account> findByLoginName(String loginName) {
+    return getJpaBasicsDao().findByLoginName(loginName);
+}
+
+@Override
+public Optional<Account> findById(Long id) {
+    return getJpaBasicsDao().findById(id);
+}
+
+@Override
+public Account save(Account account) {
+    return getJpaBasicsDao().save(account);
+}
+
+// ❌ 错误：没有 getDao() 方法
+// return getDao().findById(id);  // 编译错误！
+```
+
+### ServiceImpl 中调用其他 DAO
+
+**重要规范**：ServiceImpl 中**不允许调用其他 Service**，只能注入和使用其他 DAO。
+
+```java
+@Service
+public class AccountServiceImpl extends J2ServiceImpl<AccountDao, Account, Long>
+    implements AccountService {
+
+    // ✅ 正确：注入其他 DAO
+    private final RoleAccountDao roleAccountDao;
+    private final AccountSensitiveDao accountSensitiveDao;
+    private final AccountLoginPlatformDao accountLoginPlatformDao;
+
+    // 构造函数注入
+    public AccountServiceImpl(RoleAccountDao roleAccountDao,
+                             AccountSensitiveDao accountSensitiveDao,
+                             AccountLoginPlatformDao accountLoginPlatformDao) {
+        super(Account.class);
+        this.roleAccountDao = roleAccountDao;
+        this.accountSensitiveDao = accountSensitiveDao;
+        this.accountLoginPlatformDao = accountLoginPlatformDao;
+    }
+
+    @Override
+    public void updateEmail(String userId, String email) {
+        // ✅ 正确：直接使用其他 DAO
+        AccountSensitive sensitive = accountSensitiveDao.findByUserId(userId)
+            .orElseGet(() -> {
+                AccountSensitive newSensitive = new AccountSensitive();
+                newSensitive.setUserId(userId);
+                return newSensitive;
+            });
+
+        // 验证邮箱是否被其他用户使用
+        accountSensitiveDao.findByEmail(email)
+            .ifPresent(entity -> {
+                if (!entity.getUserId().equals(userId)) {
+                    throw new UserException("邮箱已被其他用户使用");
+                }
+            });
+
+        sensitive.setEmail(email);
+        accountSensitiveDao.save(sensitive);
+    }
+}
+```
+
+```java
+// ❌ 错误示例：不要在 ServiceImpl 中注入其他 Service
+@Service
+public class AccountServiceImpl extends J2ServiceImpl<AccountDao, Account, Long> {
+
+    // ❌ 错误：不要注入其他 Service
+    private final RoleService roleService;  // 禁止！
+    private final OrgService orgService;    // 禁止！
+
+    // ❌ 错误：ServiceImpl 中调用其他 Service
+    public void someMethod() {
+        roleService.findById(roleId);  // 禁止！应该使用 RoleDao
+    }
+}
+```
+
+**为什么这样设计？**
+- ✅ 避免 Service 层循环依赖
+- ✅ 保持 Service 层的清晰职责
+- ✅ DAO 层直接操作数据，性能更好
+- ✅ 简化依赖关系，降低复杂度
 
 ---
 
