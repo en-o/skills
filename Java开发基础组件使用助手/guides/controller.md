@@ -883,7 +883,7 @@ public class LoginVO {
 
 | 特性 | 纯JWT登录 | Redis+JWT登录 |
 |-----|----------|--------------|
-| **依赖** | `jdevelops-jwt-standalone` | `jdevelops-authentications-rjwt` |
+| **依赖** | `jdevelops-authentications-jwt` | `jdevelops-authentications-rjwt` |
 | **存储** | 无状态，不存储token | token存储在Redis |
 | **强制退出** | ❌ 不支持 | ✅ 支持 |
 | **踢人下线** | ❌ 不支持 | ✅ 支持 |

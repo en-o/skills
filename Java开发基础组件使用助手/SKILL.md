@@ -214,7 +214,7 @@ AI: "好的！现在我来制定开发计划：
 - 📝 项目名称和包路径（如未提供）
 - 📋 项目描述和业务场景
 - 📁 **包结构选择**（三层架构 vs 垂直切分 vs 混合架构）⚠️ 重要
-- 🔐 **登录鉴权选择**（不需要 / Spring Security + JWT / JDevelops 鉴权组件）⚠️ 重要
+- 🔐 **登录鉴权选择**（A: 不需要鉴权 / B: Spring Security + JWT / C: jdevelops-authentications-rjwt / D: jdevelops-authentications-jwt）⚠️ 重要
 - 📦 需要集成的组件（必要/推荐/可选）
 - 🔍 组件版本自动查询和建议
 
